@@ -157,7 +157,7 @@ function url(force){
   if(!u || force){ const n = prompt('URL Web App Apps Script:', u||''); if(n){ u = n.trim(); LS.set('url', u); } }
   return u;
 }
-function apply(res){ data = res.anggaran || []; trx = res.transaksi || []; saldo = res.saldo || 0; waktu = res.waktu || Date.now(); LS.set('cache', JSON.stringify(res)); }
+function apply(res){ data = (res.anggaran || []).map(d => ({nama:d.nama, nominal:Number(d.nominal)||0, realisasi:Number(d.realisasi)||0})); trx = (res.transaksi || []).map(t => ({...t, jumlah:Number(t.jumlah)||0})); saldo = res.saldo || 0; waktu = res.waktu || Date.now(); LS.set('cache', JSON.stringify(res)); }
 async function load(){
   const u = url(); if(!u) return render();
   try{ apply(await (await fetch(u)).json()); }
