@@ -1,4 +1,4 @@
-const C='dompet-v5',F=['./','index.html','icon.svg','manifest.json'];
+const C='dompet-v6',F=['./','index.html','icon.svg','manifest.json'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(C).then(c=>c.addAll(F))));
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;
