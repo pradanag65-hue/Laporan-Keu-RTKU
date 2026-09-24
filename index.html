@@ -60,6 +60,13 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 .act{display:flex;gap:8px;margin-top:20px}
 .act button{flex:1;padding:13px;border-radius:12px;border:0;background:#eef0fa;font:inherit;font-weight:700;color:var(--ink)}
 .act .p{background:var(--navy);color:#fff}
+.hd{display:flex;justify-content:space-between;align-items:baseline}
+.lnk{background:none;border:0;color:var(--navy);font:inherit;font-weight:700;font-size:13px}
+.bars{display:flex;align-items:flex-end;gap:2px;height:110px;padding:14px 14px 0}
+.bars i{flex:1;min-width:3px;background:var(--navy2);border-radius:3px 3px 0 0}
+.axis{display:flex;justify-content:space-between;padding:6px 14px 12px}
+.pb{height:6px;border-radius:3px;background:#e4e8f6;margin-top:6px}
+.pb i{display:block;height:100%;border-radius:3px;background:var(--navy2)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -67,13 +74,14 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 <div id="app">
 <header>
   <div class="top">
-    <div><div class="sisa" id="sisa">Rp 0</div><div class="lbl">Sisa anggaran bulan ini</div></div>
+    <div><div class="lbl">Sudah dikeluarkan bulan ini</div><div class="sisa" id="sisa">Rp 0</div></div>
     <button class="bell" data-a="notif" aria-label="Notifikasi"><svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg><span class="badge" id="badge" hidden></span></button>
   </div>
   <div class="bar"><i id="bar"></i></div>
   <div class="lbl" id="info"></div>
   <div class="qa">
     <button data-a="catat"><span><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M12 10v5M9.5 12.5h5"/></svg></span>Catat</button>
+    <button data-a="saldo"><span><svg viewBox="0 0 24 24"><path d="M3 7h15a3 3 0 0 1 3 3v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h11M16 14h2"/></svg></span>Saldo</button>
     <button data-a="ambang"><span><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span>Ambang</button>
     <button data-a="sync"><span><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></span>Sinkron</button>
     <button data-a="url"><span><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>Sheets</button>
@@ -82,19 +90,29 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 
 <div class="sheet">
   <section class="view" id="v-home">
-    <h2>Anggaran</h2>
+    <div class="hd"><h2>Anggaran</h2><button class="lnk" data-a="kategori">+ Kategori</button></div>
     <div class="chips" id="chips"></div>
     <div class="card" id="rows"></div>
-    <p class="note">Ketuk kategori untuk ubah nominal atau hapus.</p>
+    <p class="note">Ketuk kategori untuk atur batas maksimal atau hapus. Total batas tidak boleh melebihi saldo.</p>
+  </section>
+  <section class="view" id="v-laporan" hidden>
+    <div class="hd"><h2>Laporan</h2><small id="upd"></small></div>
+    <div class="card" id="ringkas"></div>
+    <div class="day">Pengeluaran per hari</div>
+    <div class="card" id="harian"></div>
+    <div class="day">Porsi per kategori</div>
+    <div class="card" id="porsi"></div>
+    <p class="note">Data diperbarui otomatis tiap 30 detik dan saat aplikasi dibuka.</p>
   </section>
   <section class="view" id="v-riwayat" hidden>
-    <h2>Riwayat</h2>
+    <h2>Riwayat bulan ini</h2>
     <div id="hist"></div>
   </section>
   <section class="view" id="v-setelan" hidden>
     <h2>Setelan</h2>
     <div class="card">
       <button class="set" data-a="notif">Notifikasi HP<span class="sw" id="sw"></span></button>
+      <button class="set" data-a="saldo">Saldo bulan ini<small id="saldov"></small></button>
       <button class="set" data-a="ambang">Ambang notifikasi<small id="thrv"></small></button>
       <button class="set" data-a="url">URL Google Sheets<small>Ubah</small></button>
     </div>
@@ -104,9 +122,9 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 
 <nav>
   <button data-t="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Beranda</button>
-  <button data-t="riwayat"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Riwayat</button>
+  <button data-t="laporan"><svg viewBox="0 0 24 24"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>Laporan</button>
   <button class="fab" data-a="catat" aria-label="Catat pengeluaran"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-  <button data-a="kategori"><svg viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1"/></svg>Kategori</button>
+  <button data-t="riwayat"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Riwayat</button>
   <button data-t="setelan"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>Setelan</button>
 </nav>
 </div>
@@ -127,7 +145,7 @@ const LS = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},se
 // >>> Tempel URL Web App Apps Script di sini (berakhiran /exec) <<<
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZYOD91B0kaZrgggT61HRQyBwQzU9DlE7P2JjWN_XLusRNq9bWJJ471gajqfqHaokWMQ/exec';
 const EMBED = /^https?:\/\//.test(SHEETS_URL);
-let data = [], trx = [], tab = 'home', filt = 'all';
+let data = [], trx = [], saldo = 0, waktu = Date.now(), tab = 'home', filt = 'all';
 const thr = () => Number(LS.get('thr') || 75);
 const pct = d => d.nominal ? d.realisasi/d.nominal*100 : 0;
 const st = d => { const p = pct(d); return p>=100 ? 'x' : p>=thr() ? 'w' : 'ok'; };
@@ -139,7 +157,7 @@ function url(force){
   if(!u || force){ const n = prompt('URL Web App Apps Script:', u||''); if(n){ u = n.trim(); LS.set('url', u); } }
   return u;
 }
-function apply(res){ data = res.anggaran || []; trx = res.transaksi || []; LS.set('cache', JSON.stringify(res)); }
+function apply(res){ data = res.anggaran || []; trx = res.transaksi || []; saldo = res.saldo || 0; waktu = res.waktu || Date.now(); LS.set('cache', JSON.stringify(res)); }
 async function load(){
   const u = url(); if(!u) return render();
   try{ apply(await (await fetch(u)).json()); }
@@ -147,11 +165,28 @@ async function load(){
   render();
 }
 
+function laporan(T,R,S){
+  const kv = (a,b,c) => `<div class="row"><div class="mid">${a}</div><div class="amt"><b ${c||''}>${b}</b></div></div>`;
+  $('ringkas').innerHTML = kv('Saldo bulan ini',rp(S)) + kv('Total batas kategori',rp(T)) + kv('Belum dialokasikan',rp(S-T))
+    + kv('Sudah dikeluarkan',rp(R)) + kv('Sisa saldo',rp(S-R), S-R<0 ? 'style="color:var(--bad)"' : '');
+  const now = new Date(), nd = now.getDate(), per = Array(nd).fill(0);
+  trx.forEach(t => { const d = new Date(t.tgl); if(d.getMonth()===now.getMonth() && d.getDate()<=nd) per[d.getDate()-1] += t.jumlah; });
+  const mx = Math.max(1, ...per);
+  $('harian').innerHTML = `<div class="bars">${per.map((v,i)=>`<i title="${i+1}: ${rp(v)}" style="height:${Math.max(2,v/mx*100)}%"></i>`).join('')}</div>
+    <div class="axis"><small>1</small><small>Tertinggi ${rp(Math.max(0,...per))}/hari</small><small>${nd}</small></div>`;
+  $('porsi').innerHTML = [...data].sort((a,b)=>b.realisasi-a.realisasi).filter(d=>d.realisasi>0).map(d =>
+    `<div class="row"><div class="mid"><b>${esc(d.nama)}</b><div class="pb"><i style="width:${d.realisasi/(R||1)*100}%"></i></div></div><div class="amt"><b>${rp(d.realisasi)}</b><small>${Math.round(d.realisasi/(R||1)*100)}%</small></div></div>`).join('')
+    || '<p class="empty">Belum ada pengeluaran bulan ini.</p>';
+  $('upd').textContent = 'Diperbarui ' + new Date(waktu).toLocaleTimeString('id-ID');
+}
+
 function render(){
   const T = data.reduce((s,d)=>s+d.nominal,0), R = data.reduce((s,d)=>s+d.realisasi,0);
-  $('sisa').textContent = rp(T-R);
-  $('bar').style.width = Math.min(100, T ? R/T*100 : 0) + '%';
-  $('info').textContent = `Terpakai ${rp(R)} dari ${rp(T)}`;
+  const S = saldo || T;
+  $('sisa').textContent = rp(R);
+  $('bar').style.width = Math.min(100, S ? R/S*100 : 0) + '%';
+  $('info').textContent = `Sisa saldo ${rp(S-R)} dari ${rp(S)}`;
+  laporan(T,R,S);
   const n = data.filter(d => st(d) !== 'ok').length;
   $('badge').hidden = !n; $('badge').textContent = n;
   $('chips').innerHTML = [['all','Semua'],['ok','Aman'],['w','Hampir habis'],['x','Lewat']]
@@ -160,7 +195,7 @@ function render(){
   $('rows').innerHTML = rows.length ? rows.map(([d,i]) => `<div class="row" data-i="${i}">
     <div class="ring ${st(d)==='ok'?'':st(d)}" style="--p:${Math.min(100,pct(d))}"><b>${Math.round(pct(d))}%</b></div>
     <div class="mid"><b>${esc(d.nama)}</b><small>Sisa ${rp(d.nominal-d.realisasi)}</small></div>
-    <div class="amt"><b>${rp(d.realisasi)}</b><small>dari ${rp(d.nominal)}</small></div></div>`).join('')
+    <div class="amt"><b>${rp(d.realisasi)}</b><small>maks ${rp(d.nominal)}</small></div></div>`).join('')
     : '<p class="empty">Belum ada kategori di sini.</p>';
 
   const hari = t => { const d = new Date(t), n = new Date(), k = x => x.toDateString();
@@ -170,7 +205,7 @@ function render(){
     `<div class="row"><div class="mid"><b>${esc(t.kategori)}</b><small>${esc(t.catatan||'-')}</small></div><div class="amt neg">- ${rp(t.jumlah)}</div></div>`).join('')}</div>`).join('')
     : '<p class="empty">Belum ada transaksi.</p>';
 
-  $('thrv').textContent = thr() + '%';
+  $('thrv').textContent = thr() + '%'; $('saldov').textContent = rp(S);
   $('sw').classList.toggle('on', 'Notification' in window && Notification.permission === 'granted');
   $('kat').innerHTML = data.map(d=>`<option>${esc(d.nama)}</option>`).join('');
   document.querySelectorAll('.view').forEach(v => v.hidden = v.id !== 'v-'+tab);
@@ -190,7 +225,8 @@ async function kirim(payload){
   const before = Object.fromEntries(data.map(d=>[d.nama, pct(d)]));
   try{
     const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload)});
-    apply(await res.json()); render();
+    const j = await res.json(); if(j.error){ alert(j.error); return false; }
+    apply(j); render();
     for(const d of data){
       const p = pct(d), b = before[d.nama] ?? 0;
       if(p>=100 && b<100) notify(`${d.nama} melebihi anggaran`, `Terpakai ${rp(d.realisasi)} dari ${rp(d.nominal)}`);
@@ -204,7 +240,17 @@ const aksi = {
   catat(){ if(!data.length) return load(); $('dlg').showModal(); },
   kategori(){
     const nama = (prompt('Nama kategori baru:') || '').trim(); if(!nama) return;
-    const n = angka(prompt('Anggaran per bulan (Rp):') || ''); if(n > 0) kirim({action:'budget', nama, nominal:n});
+    const T = data.reduce((s,d)=>s+d.nominal,0), av = (saldo||T) - T;
+    const n = angka(prompt(`Batas maksimal per bulan (Rp)\nSisa saldo yang bisa dialokasikan: ${rp(av)}`) || '');
+    if(n > av) return alert(`Melebihi saldo. Maksimal: ${rp(av)}`);
+    if(n > 0) kirim({action:'budget', nama, nominal:n});
+  },
+  saldo(){
+    const T = data.reduce((s,d)=>s+d.nominal,0);
+    const v = prompt(`Saldo bulan ini (Rp)\nTotal batas kategori saat ini: ${rp(T)}`, saldo||T); if(v === null) return;
+    const n = angka(v); if(!n) return;
+    if(n < T) return alert(`Saldo tidak boleh lebih kecil dari total batas (${rp(T)}). Kurangi batas kategori dulu.`);
+    kirim({action:'saldo', saldo:n});
   },
   ambang(){ const v = prompt('Notifikasi saat terpakai berapa %?', thr()); if(v && angka(v)){ LS.set('thr', angka(v)); render(); } },
   sync: load,
@@ -219,20 +265,26 @@ document.addEventListener('click', e => {
   else if(t.dataset.f){ filt = t.dataset.f; render(); }
   else if(t.dataset.i){
     const d = data[t.dataset.i];
-    const v = prompt(`Anggaran ${d.nama} (Rp)\nKetik "hapus" untuk menghapus kategori`, d.nominal);
+    const T = data.reduce((s,x)=>s+x.nominal,0), av = (saldo||T) - (T - d.nominal);
+    const v = prompt(`Batas maksimal ${d.nama} (Rp)\nBisa diatur sampai ${rp(av)}\nKetik "hapus" untuk menghapus kategori`, d.nominal);
     if(v === null) return;
     if(v.trim().toLowerCase() === 'hapus'){ if(confirm(`Hapus kategori ${d.nama}?`)) kirim({action:'budget', nama:d.nama, hapus:true}); return; }
-    if(angka(v) > 0) kirim({action:'budget', nama:d.nama, nominal:angka(v)});
+    const n = angka(v); if(n > av) return alert(`Melebihi saldo. Maksimal untuk ${d.nama}: ${rp(av)}`);
+    if(n > 0) kirim({action:'budget', nama:d.nama, nominal:n});
   }
 });
 $('batal').onclick = () => $('dlg').close();
 $('simpan').onclick = async () => {
   const jumlah = Number($('jml').value); if(!jumlah || jumlah <= 0) return;
+  const dk = data.find(x => x.nama === $('kat').value);
+  if(dk && dk.realisasi + jumlah > dk.nominal && !confirm(`Ini melewati batas maksimal ${dk.nama} (${rp(dk.nominal)}). Tetap simpan?`)) return;
   $('simpan').disabled = true;
   if(await kirim({kategori:$('kat').value, jumlah, catatan:$('cat').value})){ $('dlg').close(); $('jml').value=''; $('cat').value=''; }
   $('simpan').disabled = false;
 };
 
+setInterval(() => { if(!document.hidden && !$('dlg').open && (EMBED || LS.get('url'))) load(); }, 30000);
+document.addEventListener('visibilitychange', () => { if(!document.hidden && (EMBED || LS.get('url'))) load(); });
 if(EMBED) document.querySelectorAll('[data-a="url"]').forEach(x => x.hidden = true);
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 load();
