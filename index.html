@@ -2,56 +2,114 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1f3d2b">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3f94">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap">
 <title>Dompet Rumah</title>
 <style>
-:root{--bg:#f6f5f0;--ink:#1d2a22;--mut:#6b766e;--line:#dfddd2;--ok:#2f7d4f;--warn:#d98a00;--bad:#c23b2e;--brand:#1f3d2b}
-*{box-sizing:border-box}
-body{margin:0;font:16px/1.4 system-ui,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:88px}
-header{background:var(--brand);color:#fff;padding:20px 16px 18px}
-header small{opacity:.75}
-.sisa{font-size:34px;font-weight:700;letter-spacing:-.5px;margin:2px 0 10px}
-.bar{height:8px;border-radius:4px;background:#ffffff30;overflow:hidden}
-.bar i{display:block;height:100%;background:#fff}
-#alert{margin:12px 16px 0;padding:12px;border-radius:10px;background:#fff3d6;border:1px solid #f0d28a;font-size:14px;display:none}
-ul{list-style:none;margin:8px 16px;padding:0}
-li{padding:14px 0;border-bottom:1px solid var(--line)}
-.r{display:flex;justify-content:space-between;gap:8px}
-.r b{font-weight:600}
-.r span{color:var(--mut);font-size:14px}
-.pb{height:6px;border-radius:3px;background:var(--line);margin:8px 0 4px;overflow:hidden}
-.pb i{display:block;height:100%;background:var(--ok)}
-.w .pb i{background:var(--warn)}.x .pb i{background:var(--bad)}
-.x .pct{color:var(--bad)}.w .pct{color:var(--warn)}
-.pct{font-size:13px;font-weight:600}
-button,select,input{font:inherit}
-.fab{position:fixed;right:16px;bottom:20px;background:var(--brand);color:#fff;border:0;border-radius:28px;padding:16px 22px;font-weight:600;box-shadow:0 4px 14px #0003}
-dialog{border:0;border-radius:16px;padding:20px;width:min(92vw,420px)}
-dialog::backdrop{background:#0006}
-label{display:block;font-size:14px;color:var(--mut);margin:12px 0 4px}
-select,input{width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff}
-.act{display:flex;gap:8px;margin-top:18px}
-.act button{flex:1;padding:12px;border-radius:10px;border:1px solid var(--line);background:#fff}
-.act .p{background:var(--brand);color:#fff;border-color:var(--brand)}
-li{cursor:pointer}
-.foot{text-align:center;color:var(--mut);font-size:13px;margin:16px}
-.foot a{color:var(--mut)}
+:root{--navy:#1f3f94;--navy2:#2f58bd;--ink:#152a5c;--mut:#8b95b8;--bg:#eceff9;--card:#fff;--line:#e8ebf7;--ok:#2fb37a;--warn:#e79a1a;--bad:#e0503f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 'Plus Jakarta Sans',system-ui,sans-serif}
+#app{max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:110px;position:relative}
+header{background:linear-gradient(160deg,var(--navy2),var(--navy));color:#fff;padding:calc(20px + env(safe-area-inset-top,0px)) 20px 52px;border-radius:0 0 4px 4px}
+.top{display:flex;justify-content:space-between;align-items:flex-start}
+.sisa{font-size:32px;font-weight:800;letter-spacing:-.5px}
+.lbl{opacity:.8;font-size:13px}
+.bell{position:relative;width:40px;height:40px;border-radius:50%;background:#ffffff26;border:0;color:#fff;display:grid;place-items:center}
+.badge{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;border-radius:9px;background:var(--bad);font-size:11px;font-weight:700;display:grid;place-items:center}
+.bar{height:6px;border-radius:3px;background:#ffffff33;margin:14px 0 6px;overflow:hidden}
+.bar i{display:block;height:100%;background:#fff;border-radius:3px}
+.qa{display:grid;grid-template-columns:repeat(auto-fit,minmax(64px,1fr));gap:8px;margin-top:18px;text-align:center;font-size:12px}
+.qa button{background:none;border:0;color:#fff;font:inherit}
+.qa span{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 6px;background:#fff;color:var(--navy);border-radius:16px}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sheet{margin-top:-30px;background:#f7f8fd;border-radius:28px 28px 0 0;padding:22px 16px 8px;min-height:60vh}
+h2{margin:0 0 12px;font-size:18px;font-weight:800}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px}
+.chip{border:0;background:#fff;color:var(--mut);padding:7px 14px;border-radius:16px;font:inherit;font-size:13px;font-weight:500;white-space:nowrap}
+.chip.on{color:var(--ink);font-weight:700;box-shadow:0 1px 6px #1f3f9422}
+.card{background:var(--card);border-radius:18px;box-shadow:0 2px 12px #1f3f9412;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.mid{flex:1;min-width:0}.mid b,.amt b{display:block;font-weight:700}
+small{color:var(--mut);font-size:12px}
+.amt{text-align:right}
+.ring{--c:var(--ok);width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),#e4e8f6 0);display:grid;place-items:center;flex:none}
+.ring.w{--c:var(--warn)}.ring.x{--c:var(--bad)}
+.ring b{width:36px;height:36px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:11px;font-weight:700}
+.day{font-size:12px;color:var(--mut);font-weight:700;margin:14px 4px 8px}
+.neg{color:var(--ink);font-weight:700}
+.empty{text-align:center;color:var(--mut);padding:24px}
+.set{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--line);font-weight:500;width:100%;background:none;border-left:0;border-right:0;border-top:0;font-family:inherit;font-size:15px;color:var(--ink);text-align:left}
+.set:last-child{border:0}
+.sw{width:44px;height:26px;border-radius:13px;background:#d6dbee;position:relative;transition:.2s;flex:none}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s}
+.sw.on{background:var(--ok)}.sw.on::after{left:21px}
+.note{color:var(--mut);font-size:12px;margin:12px 4px}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100%);background:#fff;border-radius:24px 24px 0 0;box-shadow:0 -4px 20px #1f3f9418;display:grid;grid-template-columns:1fr 1fr 76px 1fr 1fr;padding:10px 4px calc(10px + env(safe-area-inset-bottom,0px))}
+nav button{background:none;border:0;color:var(--mut);font:inherit;font-size:11px;display:grid;justify-items:center;gap:3px}
+nav button.on{color:var(--navy);font-weight:700}
+nav .fab{width:52px;height:52px;border-radius:50%;background:var(--navy);color:#fff;margin:-26px auto 0;box-shadow:0 6px 16px #1f3f9455;align-self:start}
+nav .fab svg{width:26px;height:26px}
+dialog{border:0;border-radius:22px;padding:22px;width:min(92vw,400px);color:var(--ink);font-family:inherit}
+dialog::backdrop{background:#0a1a4a80}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:12px;background:#f7f8fd;font:inherit;color:var(--ink)}
+.act{display:flex;gap:8px;margin-top:20px}
+.act button{flex:1;padding:13px;border-radius:12px;border:0;background:#eef0fa;font:inherit;font-weight:700;color:var(--ink)}
+.act .p{background:var(--navy);color:#fff}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
+<div id="app">
 <header>
-  <small>Sisa anggaran bulan ini</small>
-  <div class="sisa" id="sisa">Rp 0</div>
-  <div class="bar"><i id="tot"></i></div>
-  <small id="tinfo"></small>
+  <div class="top">
+    <div><div class="sisa" id="sisa">Rp 0</div><div class="lbl">Sisa anggaran bulan ini</div></div>
+    <button class="bell" data-a="notif" aria-label="Notifikasi"><svg viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/></svg><span class="badge" id="badge" hidden></span></button>
+  </div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="lbl" id="info"></div>
+  <div class="qa">
+    <button data-a="catat"><span><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M12 10v5M9.5 12.5h5"/></svg></span>Catat</button>
+    <button data-a="ambang"><span><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span>Ambang</button>
+    <button data-a="sync"><span><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></span>Sinkron</button>
+    <button data-a="url"><span><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>Sheets</button>
+  </div>
 </header>
-<div id="alert"></div>
-<ul id="list"></ul>
-<div class="foot"><a href="#" id="cfg">Ubah URL Sheets</a> · <a href="#" id="thr">Ambang notifikasi</a> · <a href="#" id="kat2">+ Kategori</a></div>
-<button class="fab" id="add">+ Catat</button>
+
+<div class="sheet">
+  <section class="view" id="v-home">
+    <h2>Anggaran</h2>
+    <div class="chips" id="chips"></div>
+    <div class="card" id="rows"></div>
+    <p class="note">Ketuk kategori untuk ubah nominal atau hapus.</p>
+  </section>
+  <section class="view" id="v-riwayat" hidden>
+    <h2>Riwayat</h2>
+    <div id="hist"></div>
+  </section>
+  <section class="view" id="v-setelan" hidden>
+    <h2>Setelan</h2>
+    <div class="card">
+      <button class="set" data-a="notif">Notifikasi HP<span class="sw" id="sw"></span></button>
+      <button class="set" data-a="ambang">Ambang notifikasi<small id="thrv"></small></button>
+      <button class="set" data-a="url">URL Google Sheets<small>Ubah</small></button>
+    </div>
+    <p class="note">Notifikasi WhatsApp diatur di Apps Script (AMBANG di Script Properties).</p>
+  </section>
+</div>
+
+<nav>
+  <button data-t="home" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Beranda</button>
+  <button data-t="riwayat"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Riwayat</button>
+  <button class="fab" data-a="catat" aria-label="Catat pengeluaran"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button data-a="kategori"><svg viewBox="0 0 24 24"><path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1"/></svg>Kategori</button>
+  <button data-t="setelan"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>Setelan</button>
+</nav>
+</div>
 
 <dialog id="dlg">
   <h3 style="margin:0">Catat pengeluaran</h3>
@@ -63,44 +121,60 @@ li{cursor:pointer}
 
 <script>
 const $ = id => document.getElementById(id);
-const rp = n => 'Rp ' + Number(n).toLocaleString('id-ID');
+const rp = n => (n<0?'-':'') + 'Rp ' + Math.abs(Number(n)).toLocaleString('id-ID');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const LS = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
-let data = [];
-
-// Ambang notifikasi: default 75% terpakai (= sisa 25%)
+// >>> Tempel URL Web App Apps Script di sini (berakhiran /exec) <<<
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZYOD91B0kaZrgggT61HRQyBwQzU9DlE7P2JjWN_XLusRNq9bWJJ471gajqfqHaokWMQ/exec';
+const EMBED = /^https?:\/\//.test(SHEETS_URL);
+let data = [], trx = [], tab = 'home', filt = 'all';
 const thr = () => Number(LS.get('thr') || 75);
+const pct = d => d.nominal ? d.realisasi/d.nominal*100 : 0;
+const st = d => { const p = pct(d); return p>=100 ? 'x' : p>=thr() ? 'w' : 'ok'; };
+const angka = v => Number(String(v).replace(/\D/g,''));
 
-function url(){
+function url(force){
+  if(EMBED) return SHEETS_URL;
   let u = LS.get('url');
-  if(!u){ u = prompt('Tempel URL Web App Apps Script:') || ''; if(u) LS.set('url', u.trim()); }
+  if(!u || force){ const n = prompt('URL Web App Apps Script:', u||''); if(n){ u = n.trim(); LS.set('url', u); } }
   return u;
 }
-$('cfg').onclick = e => { e.preventDefault(); const u = prompt('URL Web App Apps Script:', LS.get('url')||''); if(u){LS.set('url',u.trim()); load();} };
-$('thr').onclick = e => { e.preventDefault(); const v = prompt('Notifikasi saat terpakai berapa %?', thr()); if(v){LS.set('thr', Number(v)); render();} };
-
+function apply(res){ data = res.anggaran || []; trx = res.transaksi || []; LS.set('cache', JSON.stringify(res)); }
 async function load(){
-  const u = url(); if(!u) return;
-  try{ data = await (await fetch(u)).json(); LS.set('cache', JSON.stringify(data)); }
-  catch(e){ try{ data = JSON.parse(LS.get('cache')||'[]'); }catch(_){ data = []; } }
-  render(true);
+  const u = url(); if(!u) return render();
+  try{ apply(await (await fetch(u)).json()); }
+  catch(e){ try{ apply(JSON.parse(LS.get('cache')||'{}')); }catch(_){} }
+  render();
 }
 
 function render(){
   const T = data.reduce((s,d)=>s+d.nominal,0), R = data.reduce((s,d)=>s+d.realisasi,0);
   $('sisa').textContent = rp(T-R);
-  $('tot').style.width = Math.min(100, T? R/T*100 : 0) + '%';
-  $('tinfo').textContent = `Terpakai ${rp(R)} dari ${rp(T)}`;
-  $('list').innerHTML = data.map((d,i)=>{
-    const p = d.nominal ? d.realisasi/d.nominal*100 : 0;
-    const c = p>=100 ? 'x' : p>=thr() ? 'w' : '';
-    return `<li class="${c}" data-i="${i}"><div class="r"><b>${d.nama}</b><span>${rp(d.realisasi)} / ${rp(d.nominal)}</span></div>
-      <div class="pb"><i style="width:${Math.min(100,p)}%"></i></div>
-      <span class="pct">${Math.round(p)}% terpakai · sisa ${rp(d.nominal-d.realisasi)}</span></li>`;
-  }).join('');
-  $('kat').innerHTML = data.map(d=>`<option>${d.nama}</option>`).join('');
-  const near = data.filter(d => d.nominal && d.realisasi/d.nominal*100 >= thr());
-  $('alert').style.display = near.length ? 'block' : 'none';
-  $('alert').textContent = near.length ? 'Hampir habis: ' + near.map(d=>d.nama).join(', ') : '';
+  $('bar').style.width = Math.min(100, T ? R/T*100 : 0) + '%';
+  $('info').textContent = `Terpakai ${rp(R)} dari ${rp(T)}`;
+  const n = data.filter(d => st(d) !== 'ok').length;
+  $('badge').hidden = !n; $('badge').textContent = n;
+  $('chips').innerHTML = [['all','Semua'],['ok','Aman'],['w','Hampir habis'],['x','Lewat']]
+    .map(([k,l]) => `<button class="chip ${filt===k?'on':''}" data-f="${k}">${l}</button>`).join('');
+  const rows = data.map((d,i)=>[d,i]).filter(([d]) => filt==='all' || st(d)===filt);
+  $('rows').innerHTML = rows.length ? rows.map(([d,i]) => `<div class="row" data-i="${i}">
+    <div class="ring ${st(d)==='ok'?'':st(d)}" style="--p:${Math.min(100,pct(d))}"><b>${Math.round(pct(d))}%</b></div>
+    <div class="mid"><b>${esc(d.nama)}</b><small>Sisa ${rp(d.nominal-d.realisasi)}</small></div>
+    <div class="amt"><b>${rp(d.realisasi)}</b><small>dari ${rp(d.nominal)}</small></div></div>`).join('')
+    : '<p class="empty">Belum ada kategori di sini.</p>';
+
+  const hari = t => { const d = new Date(t), n = new Date(), k = x => x.toDateString();
+    return k(d)===k(n) ? 'Hari ini' : k(d)===k(new Date(n-864e5)) ? 'Kemarin' : d.toLocaleDateString('id-ID',{day:'numeric',month:'long'}); };
+  const g = {}; trx.forEach(t => (g[hari(t.tgl)] = g[hari(t.tgl)] || []).push(t));
+  $('hist').innerHTML = trx.length ? Object.entries(g).map(([h,l]) => `<div class="day">${h}</div><div class="card">${l.map(t =>
+    `<div class="row"><div class="mid"><b>${esc(t.kategori)}</b><small>${esc(t.catatan||'-')}</small></div><div class="amt neg">- ${rp(t.jumlah)}</div></div>`).join('')}</div>`).join('')
+    : '<p class="empty">Belum ada transaksi.</p>';
+
+  $('thrv').textContent = thr() + '%';
+  $('sw').classList.toggle('on', 'Notification' in window && Notification.permission === 'granted');
+  $('kat').innerHTML = data.map(d=>`<option>${esc(d.nama)}</option>`).join('');
+  document.querySelectorAll('.view').forEach(v => v.hidden = v.id !== 'v-'+tab);
+  document.querySelectorAll('nav [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
 }
 
 async function notify(title, body){
@@ -112,54 +186,54 @@ async function notify(title, body){
     reg.showNotification(title, {body, icon:'icon.svg', badge:'icon.svg', vibrate:[200,100,200]});
   }catch(e){}
 }
-
-$('add').onclick = () => { if(!data.length) return load(); $('dlg').showModal(); };
-$('batal').onclick = () => $('dlg').close();
-$('simpan').onclick = async () => {
-  const jumlah = Number($('jml').value), kategori = $('kat').value;
-  if(!jumlah || jumlah<=0) return;
-  const before = Object.fromEntries(data.map(d=>[d.nama, d.nominal ? d.realisasi/d.nominal*100 : 0]));
-  $('simpan').disabled = true;
+async function kirim(payload){
+  const before = Object.fromEntries(data.map(d=>[d.nama, pct(d)]));
   try{
-    const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({kategori, jumlah, catatan: $('cat').value})});
-    data = await res.json();
-    LS.set('cache', JSON.stringify(data));
-    $('dlg').close(); $('jml').value=''; $('cat').value='';
-    render();
-    // notifikasi kalau kategori baru melewati ambang / 100%
+    const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload)});
+    apply(await res.json()); render();
     for(const d of data){
-      const p = d.nominal ? d.realisasi/d.nominal*100 : 0, b = before[d.nama] ?? 0;
+      const p = pct(d), b = before[d.nama] ?? 0;
       if(p>=100 && b<100) notify(`${d.nama} melebihi anggaran`, `Terpakai ${rp(d.realisasi)} dari ${rp(d.nominal)}`);
       else if(p>=thr() && b<thr()) notify(`${d.nama} hampir habis`, `Sisa ${rp(d.nominal-d.realisasi)} (${Math.round(p)}% terpakai)`);
     }
-  }catch(e){ alert('Gagal menyimpan. Cek koneksi dan URL Sheets.'); }
+    return true;
+  }catch(e){ alert('Gagal menyimpan. Cek koneksi dan URL Sheets.'); return false; }
+}
+
+const aksi = {
+  catat(){ if(!data.length) return load(); $('dlg').showModal(); },
+  kategori(){
+    const nama = (prompt('Nama kategori baru:') || '').trim(); if(!nama) return;
+    const n = angka(prompt('Anggaran per bulan (Rp):') || ''); if(n > 0) kirim({action:'budget', nama, nominal:n});
+  },
+  ambang(){ const v = prompt('Notifikasi saat terpakai berapa %?', thr()); if(v && angka(v)){ LS.set('thr', angka(v)); render(); } },
+  sync: load,
+  url(){ url(true); load(); },
+  async notif(){ if('Notification' in window) await Notification.requestPermission(); render(); }
+};
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-t],[data-a],[data-f],.row[data-i]'); if(!t) return;
+  if(t.dataset.t){ tab = t.dataset.t; render(); }
+  else if(t.dataset.a) aksi[t.dataset.a]();
+  else if(t.dataset.f){ filt = t.dataset.f; render(); }
+  else if(t.dataset.i){
+    const d = data[t.dataset.i];
+    const v = prompt(`Anggaran ${d.nama} (Rp)\nKetik "hapus" untuk menghapus kategori`, d.nominal);
+    if(v === null) return;
+    if(v.trim().toLowerCase() === 'hapus'){ if(confirm(`Hapus kategori ${d.nama}?`)) kirim({action:'budget', nama:d.nama, hapus:true}); return; }
+    if(angka(v) > 0) kirim({action:'budget', nama:d.nama, nominal:angka(v)});
+  }
+});
+$('batal').onclick = () => $('dlg').close();
+$('simpan').onclick = async () => {
+  const jumlah = Number($('jml').value); if(!jumlah || jumlah <= 0) return;
+  $('simpan').disabled = true;
+  if(await kirim({kategori:$('kat').value, jumlah, catatan:$('cat').value})){ $('dlg').close(); $('jml').value=''; $('cat').value=''; }
   $('simpan').disabled = false;
 };
 
-
-async function kirim(payload){
-  try{
-    const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload)});
-    data = await res.json(); LS.set('cache', JSON.stringify(data)); render();
-  }catch(e){ alert('Gagal menyimpan. Cek koneksi dan URL Sheets.'); }
-}
-const angka = v => Number(String(v).replace(/\D/g,''));
-// Ketuk kategori untuk ubah anggaran atau hapus
-$('list').onclick = e => {
-  const li = e.target.closest('li'); if(!li) return;
-  const d = data[li.dataset.i];
-  const v = prompt(`Anggaran ${d.nama} (Rp)\nKetik "hapus" untuk menghapus kategori`, d.nominal);
-  if(v === null) return;
-  if(v.trim().toLowerCase() === 'hapus'){ if(confirm(`Hapus kategori ${d.nama}?`)) kirim({action:'budget', nama:d.nama, hapus:true}); return; }
-  const n = angka(v); if(n > 0) kirim({action:'budget', nama:d.nama, nominal:n});
-};
-$('kat2').onclick = e => {
-  e.preventDefault();
-  const nama = (prompt('Nama kategori baru:') || '').trim(); if(!nama) return;
-  const n = angka(prompt('Anggaran per bulan (Rp):') || ''); if(n > 0) kirim({action:'budget', nama, nominal:n});
-};
-
+if(EMBED) document.querySelectorAll('[data-a="url"]').forEach(x => x.hidden = true);
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 load();
 </script>
