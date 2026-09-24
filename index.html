@@ -67,6 +67,8 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 .axis{display:flex;justify-content:space-between;padding:6px 14px 12px}
 .pb{height:6px;border-radius:3px;background:#e4e8f6;margin-top:6px}
 .pb i{display:block;height:100%;border-radius:3px;background:var(--navy2)}
+#toast{position:fixed;left:50%;bottom:108px;transform:translate(-50%,16px);background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;z-index:9;box-shadow:0 6px 20px #0004}
+#toast.on{opacity:1;transform:translate(-50%,0)}
 [hidden]{display:none!important}
 </style>
 </head>
@@ -129,6 +131,7 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 </nav>
 </div>
 
+<div id="toast"></div>
 <dialog id="dlg">
   <h3 style="margin:0">Catat pengeluaran</h3>
   <label>Kategori</label><select id="kat"></select>
@@ -145,6 +148,7 @@ const LS = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},se
 // >>> Tempel URL Web App Apps Script di sini (berakhiran /exec) <<<
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZYOD91B0kaZrgggT61HRQyBwQzU9DlE7P2JjWN_XLusRNq9bWJJ471gajqfqHaokWMQ/exec';
 const EMBED = /^https?:\/\//.test(SHEETS_URL);
+let sibuk = false, tmT;
 let data = [], trx = [], saldo = 0, waktu = Date.now(), tab = 'home', filt = 'all';
 const thr = () => Number(LS.get('thr') || 75);
 const pct = d => d.nominal ? d.realisasi/d.nominal*100 : 0;
@@ -159,6 +163,7 @@ function url(force){
 }
 function apply(res){ data = (res.anggaran || []).map(d => ({nama:d.nama, nominal:Number(d.nominal)||0, realisasi:Number(d.realisasi)||0})); trx = (res.transaksi || []).map(t => ({...t, jumlah:Number(t.jumlah)||0})); saldo = res.saldo || 0; waktu = res.waktu || Date.now(); LS.set('cache', JSON.stringify(res)); }
 async function load(){
+  if(sibuk) return;
   const u = url(); if(!u) return render();
   try{ apply(await (await fetch(u)).json()); }
   catch(e){ try{ apply(JSON.parse(LS.get('cache')||'{}')); }catch(_){} }
@@ -212,28 +217,40 @@ function render(){
   document.querySelectorAll('nav [data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
 }
 
+function toast(msg, ms=3200){
+  const t = $('toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(tmT); tmT = setTimeout(() => t.classList.remove('on'), ms);
+}
+function peringatan(d, b){
+  const p = pct(d);
+  if(p>=100 && b<100){ toast(`🚨 ${d.nama} melebihi batas maksimal`, 5000); notify(`${d.nama} melebihi anggaran`, `Terpakai ${rp(d.realisasi)} dari ${rp(d.nominal)}`); return true; }
+  if(p>=thr() && b<thr()){ toast(`⚠️ ${d.nama} sudah ${Math.round(p)}% terpakai`, 5000); notify(`${d.nama} hampir habis`, `Sisa ${rp(d.nominal-d.realisasi)} (${Math.round(p)}% terpakai)`); return true; }
+  return false;
+}
 async function notify(title, body){
   try{
     if(!('Notification' in window)) return;
-    if(Notification.permission === 'default') await Notification.requestPermission();
     if(Notification.permission !== 'granted') return;
     const reg = await navigator.serviceWorker.ready;
     reg.showNotification(title, {body, icon:'icon.svg', badge:'icon.svg', vibrate:[200,100,200]});
   }catch(e){}
 }
-async function kirim(payload){
+async function kirim(payload, silent){
   const before = Object.fromEntries(data.map(d=>[d.nama, pct(d)]));
+  sibuk = true;
+  if(!silent) toast('Menyimpan…', 30000);
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 30000);
   try{
-    const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload)});
-    const j = await res.json(); if(j.error){ alert(j.error); return false; }
+    const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload), signal: ctl.signal});
+    const j = await res.json();
+    if(j.error){ alert(j.error); return false; }
     apply(j); render();
-    for(const d of data){
-      const p = pct(d), b = before[d.nama] ?? 0;
-      if(p>=100 && b<100) notify(`${d.nama} melebihi anggaran`, `Terpakai ${rp(d.realisasi)} dari ${rp(d.nominal)}`);
-      else if(p>=thr() && b<thr()) notify(`${d.nama} hampir habis`, `Sisa ${rp(d.nominal-d.realisasi)} (${Math.round(p)}% terpakai)`);
-    }
+    if(!silent){ toast('Tersimpan ✓'); for(const d of data) peringatan(d, before[d.nama] ?? 0); }
     return true;
-  }catch(e){ alert('Gagal menyimpan. Cek koneksi dan URL Sheets.'); return false; }
+  }catch(e){
+    alert(e.name === 'AbortError' ? 'Server terlalu lama merespons (30 detik). Cek koneksi lalu coba lagi.' : 'Gagal menyimpan. Cek koneksi dan URL Sheets.');
+    return false;
+  }finally{ clearTimeout(tm); sibuk = false; }
 }
 
 const aksi = {
@@ -276,13 +293,18 @@ document.addEventListener('click', e => {
 $('batal').onclick = () => $('dlg').close();
 $('simpan').onclick = async () => {
   const jumlah = Number($('jml').value); if(!jumlah || jumlah <= 0) return;
-  const dk = data.find(x => x.nama === $('kat').value);
-  if(dk && dk.realisasi + jumlah > dk.nominal && !confirm(`Ini melewati batas maksimal ${dk.nama} (${rp(dk.nominal)}). Tetap simpan?`)) return;
-  $('simpan').disabled = true;
-  if(await kirim({kategori:$('kat').value, jumlah, catatan:$('cat').value})){ $('dlg').close(); $('jml').value=''; $('cat').value=''; }
-  $('simpan').disabled = false;
+  const kategori = $('kat').value, catatan = $('cat').value;
+  const dk = data.find(x => x.nama === kategori); if(!dk) return;
+  if(dk.realisasi + jumlah > dk.nominal && !confirm(`Ini melewati batas maksimal ${dk.nama} (${rp(dk.nominal)}). Tetap simpan?`)) return;
+  if('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  // Perbarui tampilan langsung, sinkron ke Sheets di latar belakang
+  const snap = { data: JSON.parse(JSON.stringify(data)), trx: trx.slice() }, b = pct(dk);
+  dk.realisasi += jumlah; trx.unshift({tgl:Date.now(), kategori, jumlah, catatan});
+  $('dlg').close(); $('jml').value = ''; $('cat').value = '';
+  render();
+  if(!peringatan(dk, b)) toast(`Tersimpan ${rp(jumlah)} · ${dk.nama} ${Math.round(pct(dk))}% terpakai`);
+  if(!(await kirim({kategori, jumlah, catatan}, true))){ data = snap.data; trx = snap.trx; render(); }
 };
-
 setInterval(() => { if(!document.hidden && !$('dlg').open && (EMBED || LS.get('url'))) load(); }, 30000);
 document.addEventListener('visibilitychange', () => { if(!document.hidden && (EMBED || LS.get('url'))) load(); });
 if(EMBED) document.querySelectorAll('[data-a="url"]').forEach(x => x.hidden = true);
