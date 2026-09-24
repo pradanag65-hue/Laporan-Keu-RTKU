@@ -67,6 +67,17 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 .axis{display:flex;justify-content:space-between;padding:6px 14px 12px}
 .pb{height:6px;border-radius:3px;background:#e4e8f6;margin-top:6px}
 .pb i{display:block;height:100%;border-radius:3px;background:var(--navy2)}
+.row[data-i],.row[data-tx],.row[data-a]{cursor:pointer}
+.qa span{background:linear-gradient(160deg,#fff 0%,#e3eafb 100%);box-shadow:0 1px 1px #fff inset,0 -3px 6px #1f3f9426 inset,0 9px 16px #0a1f5c55,0 2px 3px #0a1f5c44;transition:.12s}
+.qa button:active span,nav .fab:active{transform:translateY(2px) scale(.97);box-shadow:0 1px 1px #fff inset,0 -2px 4px #1f3f9426 inset,0 3px 6px #0a1f5c55}
+.bell{background:linear-gradient(160deg,#ffffff40,#ffffff14);box-shadow:0 1px 1px #ffffff66 inset,0 5px 10px #0a1f5c66}
+nav .fab{background:linear-gradient(160deg,#5b86e6 0%,#1f3f94 75%);box-shadow:0 2px 2px #ffffff66 inset,0 -4px 8px #0a1f5c66 inset,0 12px 20px #1f3f9488,0 3px 5px #0a1f5c55}
+.card{box-shadow:0 1px 0 #fff inset,0 12px 26px #1f3f9422,0 2px 5px #1f3f9416}
+.ring{filter:drop-shadow(0 3px 4px #1f3f9433)}
+.ring b{box-shadow:0 2px 4px #1f3f942e inset}
+.chip.on{box-shadow:0 1px 0 #fff inset,0 5px 10px #1f3f9430}
+.act .p{background:linear-gradient(160deg,#4f7be0,#1f3f94);box-shadow:0 1px 1px #ffffff66 inset,0 6px 12px #1f3f9466}
+dialog{box-shadow:0 20px 50px #0a1f5c66}
 #toast{position:fixed;left:50%;bottom:108px;transform:translate(-50%,16px);background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;z-index:9;box-shadow:0 6px 20px #0004}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 [hidden]{display:none!important}
@@ -83,7 +94,6 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
   <div class="lbl" id="info"></div>
   <div class="qa">
     <button data-a="catat"><span><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M12 10v5M9.5 12.5h5"/></svg></span>Catat</button>
-    <button data-a="saldo"><span><svg viewBox="0 0 24 24"><path d="M3 7h15a3 3 0 0 1 3 3v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h11M16 14h2"/></svg></span>Saldo</button>
     <button data-a="ambang"><span><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span>Ambang</button>
     <button data-a="sync"><span><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></span>Sinkron</button>
     <button data-a="url"><span><svg viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></span>Sheets</button>
@@ -92,10 +102,10 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 
 <div class="sheet">
   <section class="view" id="v-home">
-    <div class="hd"><h2>Anggaran</h2><button class="lnk" data-a="kategori">+ Kategori</button></div>
+    <h2>Anggaran</h2>
     <div class="chips" id="chips"></div>
     <div class="card" id="rows"></div>
-    <p class="note">Ketuk kategori untuk atur batas maksimal atau hapus. Total batas tidak boleh melebihi saldo.</p>
+    <p class="note">Batas maksimal per kategori diatur di Setelan.</p>
   </section>
   <section class="view" id="v-laporan" hidden>
     <div class="hd"><h2>Laporan</h2><small id="upd"></small></div>
@@ -109,16 +119,19 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
   <section class="view" id="v-riwayat" hidden>
     <h2>Riwayat bulan ini</h2>
     <div id="hist"></div>
+    <p class="note">Ketuk transaksi untuk mengubah atau menghapus.</p>
   </section>
   <section class="view" id="v-setelan" hidden>
     <h2>Setelan</h2>
     <div class="card">
       <button class="set" data-a="notif">Notifikasi HP<span class="sw" id="sw"></span></button>
-      <button class="set" data-a="saldo">Saldo bulan ini<small id="saldov"></small></button>
       <button class="set" data-a="ambang">Ambang notifikasi<small id="thrv"></small></button>
       <button class="set" data-a="url">URL Google Sheets<small>Ubah</small></button>
     </div>
     <p class="note">Notifikasi WhatsApp diatur di Apps Script (AMBANG di Script Properties).</p>
+    <div class="hd" style="margin-top:22px"><h2>Saldo awal &amp; batas kategori</h2><button class="lnk" id="lockbtn" data-a="kunci"></button></div>
+    <div class="card" id="atur"></div>
+    <p class="note">Terkunci otomatis setiap keluar dari Setelan. Total batas kategori tidak boleh melebihi saldo.</p>
   </section>
 </div>
 
@@ -133,11 +146,11 @@ select,input{width:100%;padding:13px;border:1px solid var(--line);border-radius:
 
 <div id="toast"></div>
 <dialog id="dlg">
-  <h3 style="margin:0">Catat pengeluaran</h3>
+  <h3 style="margin:0" id="jdl">Catat pengeluaran</h3>
   <label>Kategori</label><select id="kat"></select>
   <label>Jumlah (Rp)</label><input id="jml" type="number" inputmode="numeric" placeholder="50000">
   <label>Catatan</label><input id="cat" placeholder="opsional">
-  <div class="act"><button id="batal">Batal</button><button class="p" id="simpan">Simpan</button></div>
+  <div class="act"><button id="batal">Batal</button><button id="hapus" hidden style="color:var(--bad)">Hapus</button><button class="p" id="simpan">Simpan</button></div>
 </dialog>
 
 <script>
@@ -148,7 +161,7 @@ const LS = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},se
 // >>> Tempel URL Web App Apps Script di sini (berakhiran /exec) <<<
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZYOD91B0kaZrgggT61HRQyBwQzU9DlE7P2JjWN_XLusRNq9bWJJ471gajqfqHaokWMQ/exec';
 const EMBED = /^https?:\/\//.test(SHEETS_URL);
-let sibuk = false, tmT;
+let sibuk = false, tmT, terkunci = true, editT = null;
 let data = [], trx = [], saldo = 0, waktu = Date.now(), tab = 'home', filt = 'all';
 const thr = () => Number(LS.get('thr') || 75);
 const pct = d => d.nominal ? d.realisasi/d.nominal*100 : 0;
@@ -197,7 +210,7 @@ function render(){
   $('chips').innerHTML = [['all','Semua'],['ok','Aman'],['w','Hampir habis'],['x','Lewat']]
     .map(([k,l]) => `<button class="chip ${filt===k?'on':''}" data-f="${k}">${l}</button>`).join('');
   const rows = data.map((d,i)=>[d,i]).filter(([d]) => filt==='all' || st(d)===filt);
-  $('rows').innerHTML = rows.length ? rows.map(([d,i]) => `<div class="row" data-i="${i}">
+  $('rows').innerHTML = rows.length ? rows.map(([d,i]) => `<div class="row">
     <div class="ring ${st(d)==='ok'?'':st(d)}" style="--p:${Math.min(100,pct(d))}"><b>${Math.round(pct(d))}%</b></div>
     <div class="mid"><b>${esc(d.nama)}</b><small>Sisa ${rp(d.nominal-d.realisasi)}</small></div>
     <div class="amt"><b>${rp(d.realisasi)}</b><small>maks ${rp(d.nominal)}</small></div></div>`).join('')
@@ -207,10 +220,14 @@ function render(){
     return k(d)===k(n) ? 'Hari ini' : k(d)===k(new Date(n-864e5)) ? 'Kemarin' : d.toLocaleDateString('id-ID',{day:'numeric',month:'long'}); };
   const g = {}; trx.forEach(t => (g[hari(t.tgl)] = g[hari(t.tgl)] || []).push(t));
   $('hist').innerHTML = trx.length ? Object.entries(g).map(([h,l]) => `<div class="day">${h}</div><div class="card">${l.map(t =>
-    `<div class="row"><div class="mid"><b>${esc(t.kategori)}</b><small>${esc(t.catatan||'-')}</small></div><div class="amt neg">- ${rp(t.jumlah)}</div></div>`).join('')}</div>`).join('')
+    `<div class="row" data-tx="${trx.indexOf(t)}"><div class="mid"><b>${esc(t.kategori)}</b><small>${esc(t.catatan||'-')}</small></div><div class="amt neg">- ${rp(t.jumlah)}</div></div>`).join('')}</div>`).join('')
     : '<p class="empty">Belum ada transaksi.</p>';
 
-  $('thrv').textContent = thr() + '%'; $('saldov').textContent = rp(S);
+  $('thrv').textContent = thr() + '%';
+  $('lockbtn').textContent = terkunci ? '🔒 Terkunci' : '🔓 Terbuka';
+  $('atur').innerHTML = `<div class="row" ${terkunci?'':'data-a="saldo"'}><div class="mid"><b>Saldo awal</b><small>${terkunci?'Terkunci':'Ketuk untuk ubah'}</small></div><div class="amt"><b>${rp(S)}</b></div></div>`
+    + data.map((d,i) => `<div class="row" ${terkunci?'':`data-i="${i}"`}><div class="mid"><b>${esc(d.nama)}</b><small>Batas maksimal</small></div><div class="amt"><b>${rp(d.nominal)}</b></div></div>`).join('')
+    + (terkunci ? '' : '<div class="row" data-a="kategori"><div class="mid"><b>+ Tambah kategori</b></div></div>');
   $('sw').classList.toggle('on', 'Notification' in window && Notification.permission === 'granted');
   $('kat').innerHTML = data.map(d=>`<option>${esc(d.nama)}</option>`).join('');
   document.querySelectorAll('.view').forEach(v => v.hidden = v.id !== 'v-'+tab);
@@ -253,8 +270,21 @@ async function kirim(payload, silent){
   }finally{ clearTimeout(tm); sibuk = false; }
 }
 
+function bukaForm(t){
+  editT = t || null;
+  $('jdl').textContent = t ? 'Ubah pengeluaran' : 'Catat pengeluaran';
+  $('hapus').hidden = !t;
+  if(t){ $('kat').value = t.kategori; $('jml').value = t.jumlah; $('cat').value = t.catatan || ''; }
+  else { $('jml').value = ''; $('cat').value = ''; }
+  $('dlg').showModal();
+}
 const aksi = {
-  catat(){ if(!data.length) return load(); $('dlg').showModal(); },
+  catat(){ if(!data.length) return load(); bukaForm(); },
+  kunci(){
+    if(terkunci){ if(confirm('Buka kunci untuk mengubah saldo awal dan batas kategori?')) terkunci = false; }
+    else terkunci = true;
+    render();
+  },
   kategori(){
     const nama = (prompt('Nama kategori baru:') || '').trim(); if(!nama) return;
     const T = data.reduce((s,d)=>s+d.nominal,0), av = (saldo||T) - T;
@@ -276,10 +306,15 @@ const aksi = {
 };
 
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-t],[data-a],[data-f],.row[data-i]'); if(!t) return;
-  if(t.dataset.t){ tab = t.dataset.t; render(); }
+  const t = e.target.closest('[data-t],[data-a],[data-f],.row[data-i],.row[data-tx]'); if(!t) return;
+  if(t.dataset.t){ tab = t.dataset.t; terkunci = true; render(); }
   else if(t.dataset.a) aksi[t.dataset.a]();
   else if(t.dataset.f){ filt = t.dataset.f; render(); }
+  else if(t.dataset.tx !== undefined){
+    const x = trx[t.dataset.tx];
+    if(x && !x.row) return toast('Tunggu sinkron selesai dulu');
+    if(x) bukaForm(x);
+  }
   else if(t.dataset.i){
     const d = data[t.dataset.i];
     const T = data.reduce((s,x)=>s+x.nominal,0), av = (saldo||T) - (T - d.nominal);
@@ -290,11 +325,30 @@ document.addEventListener('click', e => {
     if(n > 0) kirim({action:'budget', nama:d.nama, nominal:n});
   }
 });
-$('batal').onclick = () => $('dlg').close();
+$('batal').onclick = () => { editT = null; $('dlg').close(); };
+$('hapus').onclick = async () => {
+  if(!editT || !confirm('Hapus pengeluaran ini?')) return;
+  const t = editT, snap = JSON.parse(JSON.stringify({data, trx}));
+  const k = data.find(x => x.nama === t.kategori); if(k) k.realisasi = Math.max(0, k.realisasi - t.jumlah);
+  trx = trx.filter(x => x !== t); editT = null; $('dlg').close(); render(); toast('Pengeluaran dihapus');
+  if(!(await kirim({action:'trxHapus', row:t.row, tgl:t.tgl, kategori:t.kategori}, true))){ data = snap.data; trx = snap.trx; render(); load(); }
+};
 $('simpan').onclick = async () => {
   const jumlah = Number($('jml').value); if(!jumlah || jumlah <= 0) return;
   const kategori = $('kat').value, catatan = $('cat').value;
   const dk = data.find(x => x.nama === kategori); if(!dk) return;
+  if(editT){
+    const t = editT, asli = {...t};
+    if(dk.realisasi - (asli.kategori === kategori ? asli.jumlah : 0) + jumlah > dk.nominal && !confirm(`Ini melewati batas maksimal ${dk.nama} (${rp(dk.nominal)}). Tetap simpan?`)) return;
+    const snap = JSON.parse(JSON.stringify({data, trx}));
+    const lama = data.find(x => x.nama === asli.kategori); if(lama) lama.realisasi -= asli.jumlah;
+    const b = pct(dk); dk.realisasi += jumlah;
+    Object.assign(t, {kategori, jumlah, catatan});
+    $('dlg').close(); editT = null; render();
+    if(!peringatan(dk, b)) toast('Perubahan disimpan ✓');
+    if(!(await kirim({action:'trxEdit', row:asli.row, tgl:asli.tgl, kategoriLama:asli.kategori, kategori, jumlah, catatan}, true))){ data = snap.data; trx = snap.trx; render(); load(); }
+    return;
+  }
   if(dk.realisasi + jumlah > dk.nominal && !confirm(`Ini melewati batas maksimal ${dk.nama} (${rp(dk.nominal)}). Tetap simpan?`)) return;
   if('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
   // Perbarui tampilan langsung, sinkron ke Sheets di latar belakang
