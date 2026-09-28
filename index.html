@@ -158,6 +158,14 @@ header>*{position:relative}
 </div>
 
 <div id="toast"></div>
+<dialog id="dnotif">
+  <h3 style="margin:0">Notifikasi</h3>
+  <div class="note" id="nstat" style="margin:8px 0 12px"></div>
+  <div class="card" id="nlist"></div>
+  <div class="note" id="nhasil"></div>
+  <div class="act"><button id="ntes">Tes notifikasi</button><button class="p" id="naktif">Aktifkan</button></div>
+  <div class="act" style="margin-top:8px"><button id="ntutup">Tutup</button></div>
+</dialog>
 <dialog id="dlg">
   <h3 style="margin:0" id="jdl">Catat pengeluaran</h3>
   <label>Kategori</label><select id="kat"></select>
@@ -196,6 +204,7 @@ async function load(){
   try{ apply(await (await fetch(u)).json()); }
   catch(e){ try{ apply(JSON.parse(LS.get('cache')||'{}')); }catch(_){} }
   render();
+  ringkasHarian();
 }
 
 function laporan(T,R,S,Tb){
@@ -264,14 +273,55 @@ function peringatan(d, b){
   if(p>=thr() && b<thr()){ toast(`⚠️ ${d.nama} sudah ${Math.round(p)}% terpakai`, 5000); notify(`${d.nama} hampir habis`, `Sisa ${rp(d.nominal-d.realisasi)} (${Math.round(p)}% terpakai)`); return true; }
   return false;
 }
-async function notify(title, body){
+const izin = () => 'Notification' in window ? Notification.permission : 'tidak-didukung';
+const tunggu = (p, ms) => Promise.race([p, new Promise(res => setTimeout(() => res(null), ms))]);
+// Tampilkan notifikasi di bar HP. Mengembalikan true kalau berhasil dikirim ke sistem.
+async function tampil(title, body){
   try{
-    if(!('Notification' in window)) return;
-    if(Notification.permission !== 'granted') return;
-    const reg = await navigator.serviceWorker.ready;
-    reg.showNotification(title, {body, icon:'icon.svg', badge:'icon.svg', vibrate:[200,100,200]});
-  }catch(e){}
+    if(izin() !== 'granted') return false;
+    let reg = null;
+    if('serviceWorker' in navigator){
+      reg = await tunggu(navigator.serviceWorker.getRegistration(), 2500);
+      if(reg && !reg.active) reg = await tunggu(navigator.serviceWorker.ready, 2500);
+    }
+    const opt = {body, icon:'icon-192.png', badge:'badge-96.png', tag:'dompet-'+title, vibrate:[200,100,200]};
+    if(reg){ await reg.showNotification(title, opt); return true; }
+    new Notification(title, opt); return true;
+  }catch(e){ return false; }
 }
+function notify(title, body){ return tampil(title, body); }
+
+// Panel notifikasi (ketuk lonceng)
+function isiNotif(){
+  const s = izin();
+  const teks = {granted:'✅ Notifikasi HP aktif', denied:'⛔ Notifikasi diblokir di HP', default:'🔕 Notifikasi belum diaktifkan', 'tidak-didukung':'Browser ini belum mendukung notifikasi'}[s];
+  const ket = s==='denied' ? '<br>Buka Chrome &gt; Setelan &gt; Setelan situs &gt; Notifikasi, lalu izinkan situs ini. Atau tekan lama ikon aplikasi &gt; Info aplikasi &gt; Notifikasi &gt; aktifkan.' : '';
+  $('nstat').innerHTML = `<b>${teks}</b>${ket}`;
+  const near = data.filter(d => !isTab(d) && pct(d) >= thr()).sort((a,b) => pct(b)-pct(a));
+  $('nlist').innerHTML = near.length ? near.map(d => `<div class="row"><div class="ring ${pct(d)>=100?'x':'w'}" style="--p:${Math.min(100,pct(d))}"><b>${Math.round(pct(d))}%</b></div><div class="mid"><b>${esc(d.nama)}</b><small>${pct(d)>=100 ? 'Melebihi batas maksimal' : 'Sisa '+rp(d.nominal-d.realisasi)}</small></div></div>`).join('')
+    : '<p class="empty">Belum ada kategori yang mendekati batas 👍</p>';
+  $('naktif').hidden = s === 'granted' || s === 'tidak-didukung';
+}
+$('naktif').onclick = async () => { try{ await Notification.requestPermission(); }catch(e){} $('nhasil').textContent = ''; isiNotif(); render(); };
+$('ntes').onclick = async () => {
+  const s = izin();
+  if(s !== 'granted'){ $('nhasil').textContent = s==='denied' ? 'Izin diblokir. Ikuti langkah di atas dulu.' : 'Tekan "Aktifkan" dulu, lalu coba tes lagi.'; return; }
+  $('nhasil').textContent = 'Mengirim…';
+  const ok = await tampil('Tes notifikasi', 'Kalau ini muncul di bar HP, notifikasi sudah aktif ✓');
+  $('nhasil').textContent = ok ? 'Terkirim. Cek bar notifikasi di atas layar HP.' : 'Gagal menampilkan. Pastikan aplikasi dibuka lewat HTTPS dan notifikasi Chrome tidak dimatikan di HP.';
+};
+$('ntutup').onclick = () => $('dnotif').close();
+
+// Sekali sehari saat aplikasi dibuka: ingatkan kategori yang sudah mendekati batas
+function ringkasHarian(){
+  if(izin() !== 'granted') return;
+  const near = data.filter(d => !isTab(d) && pct(d) >= thr());
+  const hariIni = new Date().toDateString();
+  if(!near.length || LS.get('ringkas') === hariIni) return;
+  LS.set('ringkas', hariIni);
+  tampil('Anggaran hampir habis', near.map(d => `${d.nama} ${Math.round(pct(d))}%`).join(', '));
+}
+
 async function kirim(payload, silent){
   const before = Object.fromEntries(data.map(d=>[d.nama, pct(d)]));
   sibuk = true;
@@ -324,7 +374,7 @@ const aksi = {
   ambang(){ const v = prompt('Notifikasi saat terpakai berapa %?', thr()); if(v && angka(v)){ LS.set('thr', angka(v)); render(); } },
   sync: load,
   url(){ url(true); load(); },
-  async notif(){ if('Notification' in window) await Notification.requestPermission(); render(); }
+  notif(){ $('nhasil').textContent = ''; isiNotif(); $('dnotif').showModal(); }
 };
 
 document.addEventListener('click', e => {
