@@ -167,7 +167,7 @@ header>*{position:relative}
     <p class="note">Notifikasi WhatsApp diatur di Apps Script (AMBANG di Script Properties).</p>
     <div class="hd"><h2>Periode anggaran</h2></div>
     <div class="card" id="periodeCard"></div>
-    <p class="note">Atur ulang kalau tanggal gajian maju karena tanggal merah atau akhir pekan.</p>
+    <p class="note">Atur "Dari tanggal" kalau gajian maju karena tanggal merah/akhir pekan. "Sampai tanggal" otomatis 1 bulan, tapi bisa diubah manual kalau periode kali ini lebih pendek atau panjang.</p>
     <button class="chip" style="margin-top:4px" data-a="periodeBaru">↻ Mulai periode baru dari hari ini</button>
     <div class="hd" style="margin-top:22px"><h2>Saldo awal &amp; batas kategori</h2><button class="lnk" id="lockbtn" data-a="kunci"></button></div>
     <div class="card" id="atur"></div>
@@ -356,11 +356,15 @@ function render(){
   $('pinLbl').textContent = pinAktif ? 'Ubah / matikan PIN' : 'Aktifkan PIN aplikasi';
   $('lockbtn').textContent = terkunci ? '🔒 Terkunci' : '🔓 Terbuka';
   const tglMulai = mulai ? new Date(mulai).toISOString().slice(0,10) : '';
+  const tglAkhir = akhir ? new Date(akhir).toISOString().slice(0,10) : '';
   $('periodeCard').innerHTML = `
-    <div class="row"><div class="mid"><b>Tanggal gajian / mulai periode</b><small>${mulai?hariID(new Date(mulai)):'Belum diatur'}</small></div>
+    <div class="row"><div class="mid"><b>Dari tanggal</b><small>${mulai?hariID(new Date(mulai)):'Belum diatur'}</small></div>
       <div class="amt"><input type="date" id="tglGajian" value="${tglMulai}" style="width:150px;padding:8px"></div></div>
+    <div class="row"><div class="mid"><b>Sampai tanggal</b><small>${akhir?hariID(new Date(akhir)):'Otomatis 1 bulan'}</small></div>
+      <div class="amt"><input type="date" id="tglAkhir" value="${tglAkhir}" min="${tglMulai}" style="width:150px;padding:8px"></div></div>
     <div class="row"><div class="mid"><b>Periode berjalan</b><small>${rentang()||'-'}</small></div></div>`;
   $('tglGajian').onchange = e => { if(e.target.value) kirim({action:'periode', tgl:e.target.value}); };
+  $('tglAkhir').onchange = e => { if(e.target.value) kirim({action:'periode', akhir:e.target.value}); };
   $('aturTab').innerHTML = `<div class="row" ${terkunci?'':'data-a="tabAwal"'}><div class="mid"><b>Saldo awal tabungan</b><small>${terkunci?'Terkunci':'Ketuk untuk ubah'}</small></div><div class="amt"><b>${rp(tabungan)}</b></div></div>`;
   $('atur').innerHTML = `<div class="row" ${terkunci?'':'data-a="saldo"'}><div class="mid"><b>Saldo awal</b><small>${terkunci?'Terkunci':'Ketuk untuk ubah'}</small></div><div class="amt"><b>${rp(S)}</b></div></div>`
     + data.map((d,i) => `<div class="row" ${terkunci?'':`data-i="${i}"`}><div class="mid"><b>${esc(d.nama)}</b><small>${isTab(d)?'Target tabungan / investasi':'Batas maksimal'}</small></div><div class="amt"><b>${rp(d.nominal)}</b></div></div>`).join('')
