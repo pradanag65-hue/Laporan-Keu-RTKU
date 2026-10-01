@@ -105,6 +105,7 @@ header>*{position:relative}
   </div>
   <div class="bar"><i id="bar"></i></div>
   <div class="lbl" id="info"></div>
+  <div class="lbl" id="periodeHdr" style="opacity:.85;margin-top:2px"></div>
   <div class="qa">
     <button data-a="catat"><span><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M12 10v5M9.5 12.5h5"/></svg></span>Catat</button>
     <button data-a="ambang"><span><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span>Ambang</button>
@@ -122,6 +123,7 @@ header>*{position:relative}
   </section>
   <section class="view" id="v-laporan" hidden>
     <div class="hd"><h2>Laporan</h2><small id="upd"></small></div>
+    <p class="note" id="periodeInfo" style="margin:0 0 14px"></p>
     <div class="card" id="ringkas"></div>
     <div class="day">Pengeluaran per hari</div>
     <div class="card" id="harian"></div>
@@ -142,6 +144,10 @@ header>*{position:relative}
       <button class="set" data-a="url">URL Google Sheets<small>Ubah</small></button>
     </div>
     <p class="note">Notifikasi WhatsApp diatur di Apps Script (AMBANG di Script Properties).</p>
+    <div class="hd"><h2>Periode anggaran</h2></div>
+    <div class="card" id="periodeCard"></div>
+    <p class="note">Atur ulang kalau tanggal gajian maju karena tanggal merah atau akhir pekan.</p>
+    <button class="chip" style="margin-top:4px" data-a="periodeBaru">↻ Mulai periode baru dari hari ini</button>
     <div class="hd" style="margin-top:22px"><h2>Saldo awal &amp; batas kategori</h2><button class="lnk" id="lockbtn" data-a="kunci"></button></div>
     <div class="card" id="atur"></div>
     <p class="note">Terkunci otomatis setiap keluar dari Setelan. Total batas kategori tidak boleh melebihi saldo.</p>
@@ -182,7 +188,7 @@ const LS = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},se
 // >>> Tempel URL Web App Apps Script di sini (berakhiran /exec) <<<
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZYOD91B0kaZrgggT61HRQyBwQzU9DlE7P2JjWN_XLusRNq9bWJJ471gajqfqHaokWMQ/exec';
 const EMBED = /^https?:\/\//.test(SHEETS_URL);
-let sibuk = false, tmT, terkunci = true, editT = null;
+let sibuk = false, tmT, terkunci = true, editT = null, mulai = 0, akhir = 0;
 let data = [], trx = [], saldo = 0, waktu = Date.now(), tab = 'home', filt = 'all';
 const thr = () => Number(LS.get('thr') || 75);
 const pct = d => d.nominal ? d.realisasi/d.nominal*100 : 0;
@@ -197,7 +203,7 @@ function url(force){
   if(!u || force){ const n = prompt('URL Web App Apps Script:', u||''); if(n){ u = n.trim(); LS.set('url', u); } }
   return u;
 }
-function apply(res){ data = (res.anggaran || []).map(d => ({nama:d.nama, nominal:Number(d.nominal)||0, realisasi:Number(d.realisasi)||0})); trx = (res.transaksi || []).map(t => ({...t, jumlah:Number(t.jumlah)||0})); saldo = res.saldo || 0; waktu = res.waktu || Date.now(); LS.set('cache', JSON.stringify(res)); }
+function apply(res){ data = (res.anggaran || []).map(d => ({nama:d.nama, nominal:Number(d.nominal)||0, realisasi:Number(d.realisasi)||0})); trx = (res.transaksi || []).map(t => ({...t, jumlah:Number(t.jumlah)||0})); saldo = res.saldo || 0; waktu = res.waktu || Date.now(); mulai = res.mulai || 0; akhir = res.akhir || 0; LS.set('cache', JSON.stringify(res)); }
 async function load(){
   if(sibuk) return;
   const u = url(); if(!u) return render();
@@ -214,16 +220,27 @@ function laporan(T,R,S,Tb){
     + kv('Sudah dikeluarkan',rp(R)) + kv('Ditabung / diinvestasikan',rp(Tb),'style="color:var(--navy2)"')
     + kv('Sisa saldo',rp(sisa), sisa<0 ? 'style="color:var(--bad)"' : '');
   const now = new Date(), nd = now.getDate(), per = Array(nd).fill(0);
-  trx.forEach(t => { if(tabNama(t.kategori)) return; const d = new Date(t.tgl); if(d.getMonth()===now.getMonth() && d.getDate()<=nd) per[d.getDate()-1] += t.jumlah; });
-  const mx = Math.max(1, ...per);
-  $('harian').innerHTML = `<div class="bars">${per.map((v,i)=>`<i title="${i+1}: ${rp(v)}" style="height:${Math.max(2,v/mx*100)}%"></i>`).join('')}</div>
-    <div class="axis"><small>1</small><small>Tertinggi ${rp(Math.max(0,...per))}/hari</small><small>${nd}</small></div>`;
+  const A = mulai ? new Date(mulai) : (() => { const d = new Date(now); d.setDate(1); return d; })();
+  const hariKe = t => Math.floor((new Date(t) - A) / 864e5) + 1;
+  const total = akhir ? Math.max(1, Math.round((akhir - mulai) / 864e5) + 1) : nd;
+  const berjalan = akhir ? Math.min(total, Math.floor((now - A) / 864e5) + 1) : nd;
+  const perh = Array(Math.max(berjalan, 1)).fill(0);
+  trx.forEach(t => { if(tabNama(t.kategori)) return; const k = hariKe(t.tgl); if(k >= 1 && k <= perh.length) perh[k-1] += t.jumlah; });
+  const mx = Math.max(1, ...perh);
+  $('harian').innerHTML = `<div class="bars">${perh.map((v,i)=>`<i title="Hari ${i+1}: ${rp(v)}" style="height:${Math.max(2,v/mx*100)}%"></i>`).join('')}</div>
+    <div class="axis"><small>Hari 1</small><small>Tertinggi ${rp(Math.max(0,...perh))}/hari</small><small>Hari ${total}</small></div>`;
   $('porsi').innerHTML = [...data].filter(d=>!isTab(d)&&d.realisasi>0).sort((a,b)=>b.realisasi-a.realisasi).map(d =>
     `<div class="row"><div class="mid"><b>${esc(d.nama)}</b><div class="pb"><i style="width:${d.realisasi/(R||1)*100}%"></i></div></div><div class="amt"><b>${rp(d.realisasi)}</b><small>${Math.round(d.realisasi/(R||1)*100)}%</small></div></div>`).join('')
     || '<p class="empty">Belum ada pengeluaran bulan ini.</p>';
   $('upd').textContent = 'Diperbarui ' + new Date(waktu).toLocaleTimeString('id-ID');
+  $('periodeInfo').textContent = rentang();
 }
 
+const hariID = d => d.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});
+function rentang(){
+  if(!mulai) return '';
+  return `Periode berjalan: ${hariID(new Date(mulai))} – ${hariID(new Date(akhir))}`;
+}
 function render(){
   const T = data.reduce((s,d)=>s+d.nominal,0);
   const R = data.filter(d=>!isTab(d)).reduce((s,d)=>s+d.realisasi,0);
@@ -232,6 +249,7 @@ function render(){
   $('sisa').textContent = rp(R);
   $('bar').style.width = Math.min(100, S ? R/S*100 : 0) + '%';
   $('info').textContent = `Sisa saldo ${rp(S-R-Tb)}` + (Tb ? ` · Ditabung ${rp(Tb)}` : '');
+  $('periodeHdr').textContent = rentang();
   laporan(T,R,S,Tb);
   const n = data.filter(d => !['ok','tb'].includes(st(d))).length;
   $('badge').hidden = !n; $('badge').textContent = n;
@@ -253,6 +271,12 @@ function render(){
 
   $('thrv').textContent = thr() + '%';
   $('lockbtn').textContent = terkunci ? '🔒 Terkunci' : '🔓 Terbuka';
+  const tglMulai = mulai ? new Date(mulai).toISOString().slice(0,10) : '';
+  $('periodeCard').innerHTML = `
+    <div class="row"><div class="mid"><b>Tanggal gajian / mulai periode</b><small>${mulai?hariID(new Date(mulai)):'Belum diatur'}</small></div>
+      <div class="amt"><input type="date" id="tglGajian" value="${tglMulai}" style="width:150px;padding:8px"></div></div>
+    <div class="row"><div class="mid"><b>Periode berjalan</b><small>${rentang()||'-'}</small></div></div>`;
+  $('tglGajian').onchange = e => { if(e.target.value) kirim({action:'periode', tgl:e.target.value}); };
   $('atur').innerHTML = `<div class="row" ${terkunci?'':'data-a="saldo"'}><div class="mid"><b>Saldo awal</b><small>${terkunci?'Terkunci':'Ketuk untuk ubah'}</small></div><div class="amt"><b>${rp(S)}</b></div></div>`
     + data.map((d,i) => `<div class="row" ${terkunci?'':`data-i="${i}"`}><div class="mid"><b>${esc(d.nama)}</b><small>${isTab(d)?'Target tabungan / investasi':'Batas maksimal'}</small></div><div class="amt"><b>${rp(d.nominal)}</b></div></div>`).join('')
     + (terkunci ? '' : '<div class="row" data-a="kategori"><div class="mid"><b>+ Tambah kategori</b></div></div>');
@@ -351,6 +375,7 @@ function bukaForm(t){
   $('dlg').showModal();
 }
 const aksi = {
+  periodeBaru(){ if(confirm('Mulai periode anggaran baru dari hari ini? Pengeluaran sebelumnya akan tersimpan di riwayat bulan lalu.')) kirim({action:'periode', ulang:true}); },
   catat(){ if(!data.length) return load(); bukaForm(); },
   kunci(){
     if(terkunci){ if(confirm('Buka kunci untuk mengubah saldo awal dan batas kategori?')) terkunci = false; }
