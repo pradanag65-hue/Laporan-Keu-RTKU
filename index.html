@@ -91,6 +91,20 @@ header>*{position:relative}
 .ring.tb{--c:var(--navy2)}
 .tag{display:inline-block;font-size:10px;font-weight:700;background:#e6ecff;color:var(--navy);padding:2px 8px;border-radius:8px;margin-left:6px;vertical-align:1px}
 .pos{color:var(--ok);display:block;font-weight:700}
+#lock{position:fixed;inset:0;background:linear-gradient(170deg,var(--navy2),var(--navy));z-index:50;display:none;align-items:center;justify-content:center;color:#fff}
+#lock.on{display:flex}
+.lockIn{text-align:center;padding:24px}
+.lockIcon{font-size:34px;margin-bottom:6px}
+#lockJdl{font-weight:700;font-size:16px;margin-bottom:16px}
+.dots{display:flex;gap:14px;justify-content:center;margin-bottom:8px}
+.dots i{width:14px;height:14px;border-radius:50%;border:1.5px solid #fff;display:block}
+.dots i.on{background:#fff}
+.dots.shake{animation:shk .4s}
+@keyframes shk{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+#lockErr{min-height:18px;font-size:13px;color:#ffd1cc;margin-bottom:18px}
+.pad{display:grid;grid-template-columns:repeat(3,64px);gap:14px;justify-content:center}
+.pad button{width:64px;height:64px;border-radius:50%;border:0;background:#ffffff22;color:#fff;font:inherit;font-size:22px;font-weight:600;box-shadow:0 1px 1px #ffffff40 inset}
+.pad button:active{background:#ffffff3a}
 #toast{position:fixed;left:50%;bottom:108px;transform:translate(-50%,16px);background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;z-index:9;box-shadow:0 6px 20px #0004}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 [hidden]{display:none!important}
@@ -106,6 +120,7 @@ header>*{position:relative}
   <div class="bar"><i id="bar"></i></div>
   <div class="lbl" id="info"></div>
   <div class="lbl" id="periodeHdr" style="opacity:.85;margin-top:2px"></div>
+  <div class="lbl" id="tabRibbon" style="opacity:.85"></div>
   <div class="qa">
     <button data-a="catat"><span><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M12 10v5M9.5 12.5h5"/></svg></span>Catat</button>
     <button data-a="ambang"><span><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></span>Ambang</button>
@@ -143,6 +158,12 @@ header>*{position:relative}
       <button class="set" data-a="ambang">Ambang notifikasi<small id="thrv"></small></button>
       <button class="set" data-a="url">URL Google Sheets<small>Ubah</small></button>
     </div>
+    <div class="hd" style="margin-top:22px"><h2>Keamanan</h2></div>
+    <div class="card">
+      <button class="set" data-a="aturPin"><span id="pinLbl">Atur PIN aplikasi</span><small>Ketuk untuk ubah</small></button>
+      <button class="set" data-a="kunciSkrg">Kunci aplikasi sekarang</button>
+    </div>
+    <p class="note">PIN melindungi dari orang lain yang buka aplikasi di HP ini. Kalau lupa, PIN bisa direset lewat Apps Script (fungsi resetPin).</p>
     <p class="note">Notifikasi WhatsApp diatur di Apps Script (AMBANG di Script Properties).</p>
     <div class="hd"><h2>Periode anggaran</h2></div>
     <div class="card" id="periodeCard"></div>
@@ -151,6 +172,9 @@ header>*{position:relative}
     <div class="hd" style="margin-top:22px"><h2>Saldo awal &amp; batas kategori</h2><button class="lnk" id="lockbtn" data-a="kunci"></button></div>
     <div class="card" id="atur"></div>
     <p class="note">Terkunci otomatis setiap keluar dari Setelan. Total batas kategori tidak boleh melebihi saldo.</p>
+    <div class="hd" style="margin-top:22px"><h2>Tabungan</h2></div>
+    <div class="card" id="aturTab"></div>
+    <p class="note">Saldo tabungan terus terbawa tiap periode, bertambah saat menabung dan berkurang saat dipakai sebagai sumber dana.</p>
   </section>
 </div>
 
@@ -163,6 +187,20 @@ header>*{position:relative}
 </nav>
 </div>
 
+<div id="lock">
+  <div class="lockIn">
+    <div class="lockIcon">🔒</div>
+    <div id="lockJdl">Masukkan PIN</div>
+    <div class="dots" id="dots"><i></i><i></i><i></i><i></i></div>
+    <div id="lockErr">&nbsp;</div>
+    <div class="pad" id="pad">
+      <button data-k="1">1</button><button data-k="2">2</button><button data-k="3">3</button>
+      <button data-k="4">4</button><button data-k="5">5</button><button data-k="6">6</button>
+      <button data-k="7">7</button><button data-k="8">8</button><button data-k="9">9</button>
+      <span></span><button data-k="0">0</button><button data-k="back">⌫</button>
+    </div>
+  </div>
+</div>
 <div id="toast"></div>
 <dialog id="dnotif">
   <h3 style="margin:0">Notifikasi</h3>
@@ -177,6 +215,8 @@ header>*{position:relative}
   <label>Kategori</label><select id="kat"></select>
   <label>Jumlah (Rp)</label><input id="jml" type="number" inputmode="numeric" placeholder="50000">
   <label>Catatan</label><input id="cat" placeholder="opsional">
+  <label id="lblSumber">Sumber dana</label>
+  <select id="sumber"><option value="Utama">Saldo utama</option><option value="Tabungan">Tabungan</option></select>
   <div class="act"><button id="batal">Batal</button><button id="hapus" hidden style="color:var(--bad)">Hapus</button><button class="p" id="simpan">Simpan</button></div>
 </dialog>
 
@@ -188,7 +228,8 @@ const LS = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},se
 // >>> Tempel URL Web App Apps Script di sini (berakhiran /exec) <<<
 const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZYOD91B0kaZrgggT61HRQyBwQzU9DlE7P2JjWN_XLusRNq9bWJJ471gajqfqHaokWMQ/exec';
 const EMBED = /^https?:\/\//.test(SHEETS_URL);
-let sibuk = false, tmT, terkunci = true, editT = null, mulai = 0, akhir = 0;
+let sibuk = false, tmT, terkunci = true, editT = null, mulai = 0, akhir = 0, tabungan = 0;
+let PIN = sessionStorage.getItem('pin') || '', isi = '', verifikasi = false, pinAktif = false;
 let data = [], trx = [], saldo = 0, waktu = Date.now(), tab = 'home', filt = 'all';
 const thr = () => Number(LS.get('thr') || 75);
 const pct = d => d.nominal ? d.realisasi/d.nominal*100 : 0;
@@ -203,22 +244,63 @@ function url(force){
   if(!u || force){ const n = prompt('URL Web App Apps Script:', u||''); if(n){ u = n.trim(); LS.set('url', u); } }
   return u;
 }
-function apply(res){ data = (res.anggaran || []).map(d => ({nama:d.nama, nominal:Number(d.nominal)||0, realisasi:Number(d.realisasi)||0})); trx = (res.transaksi || []).map(t => ({...t, jumlah:Number(t.jumlah)||0})); saldo = res.saldo || 0; waktu = res.waktu || Date.now(); mulai = res.mulai || 0; akhir = res.akhir || 0; LS.set('cache', JSON.stringify(res)); }
+function apply(res){ data = (res.anggaran || []).map(d => ({nama:d.nama, nominal:Number(d.nominal)||0, realisasi:Number(d.realisasi)||0})); trx = (res.transaksi || []).map(t => ({...t, jumlah:Number(t.jumlah)||0})); saldo = res.saldo || 0; waktu = res.waktu || Date.now(); mulai = res.mulai || 0; akhir = res.akhir || 0; tabungan = res.tabungan || 0; pinAktif = !!res.terkunci; LS.set('cache', JSON.stringify(res)); }
+
+// --- Kunci PIN ---
+function bukaKunci(){ $('lock').classList.add('on'); isi=''; gambarDots(); $('lockErr').textContent='\u00a0'; $('lockJdl').textContent='Masukkan PIN'; verifikasi=false; }
+function tutupKunci(){ $('lock').classList.remove('on'); }
+function gambarDots(){ document.querySelectorAll('#dots i').forEach((d,i)=>d.classList.toggle('on', i<isi.length)); }
+function salahPin(pesan){
+  $('lockErr').textContent = pesan || 'PIN salah, coba lagi';
+  $('dots').classList.remove('shake'); void $('dots').offsetWidth; $('dots').classList.add('shake');
+  isi=''; gambarDots();
+}
+$('pad').onclick = e => {
+  const k = e.target.closest('[data-k]'); if(!k || verifikasi) return;
+  const v = k.dataset.k;
+  if(v==='back'){ isi = isi.slice(0,-1); gambarDots(); return; }
+  if(isi.length>=4) return;
+  isi += v; gambarDots();
+  if(isi.length===4) cobaPin();
+};
+async function cobaPin(){
+  verifikasi = true;
+  try{
+    const res = await fetch(urlPin(isi));
+    const j = await res.json();
+    if(j.butuhPin){ verifikasi=false; if(j.terkunciSampai) return pesanTerkunci(j.terkunciSampai); return salahPin(j.sisaPercobaan!=null?`PIN salah, sisa ${j.sisaPercobaan} percobaan`:'PIN salah'); }
+    PIN = isi; sessionStorage.setItem('pin', PIN);
+    apply(j); tutupKunci(); render(); ringkasHarian();
+  }catch(e){ verifikasi=false; salahPin('Gagal memeriksa PIN. Cek koneksi.'); }
+}
+function pesanTerkunci(sampai){
+  const sisa = Math.max(1, Math.ceil((sampai-Date.now())/60000));
+  $('lockErr').textContent = `Terlalu banyak percobaan. Coba lagi dalam ${sisa} menit.`;
+  isi=''; gambarDots();
+}
+function urlPin(pin){ const u = url(); return u + (u.includes('?')?'&':'?') + 'pin=' + encodeURIComponent(pin||PIN||''); }
+
 async function load(){
   if(sibuk) return;
   const u = url(); if(!u) return render();
-  try{ apply(await (await fetch(u)).json()); }
+  try{
+    const j = await (await fetch(urlPin())).json();
+    if(j.butuhPin){ bukaKunci(); if(j.terkunciSampai) pesanTerkunci(j.terkunciSampai); return; }
+    apply(j);
+  }
   catch(e){ try{ apply(JSON.parse(LS.get('cache')||'{}')); }catch(_){} }
   render();
   ringkasHarian();
 }
 
 function laporan(T,R,S,Tb){
+  const Tbk = tabungan;
   const kv = (a,b,c) => `<div class="row"><div class="mid">${a}</div><div class="amt"><b ${c||''}>${b}</b></div></div>`;
   const sisa = S-R-Tb;
   $('ringkas').innerHTML = kv('Saldo bulan ini',rp(S)) + kv('Total batas &amp; target',rp(T)) + kv('Belum dialokasikan',rp(S-T))
     + kv('Sudah dikeluarkan',rp(R)) + kv('Ditabung / diinvestasikan',rp(Tb),'style="color:var(--navy2)"')
-    + kv('Sisa saldo',rp(sisa), sisa<0 ? 'style="color:var(--bad)"' : '');
+    + kv('Sisa saldo',rp(sisa), sisa<0 ? 'style="color:var(--bad)"' : '')
+    + kv('Saldo tabungan saat ini',rp(Tbk),'style="color:var(--ok)"');
   const now = new Date(), nd = now.getDate(), per = Array(nd).fill(0);
   const A = mulai ? new Date(mulai) : (() => { const d = new Date(now); d.setDate(1); return d; })();
   const hariKe = t => Math.floor((new Date(t) - A) / 864e5) + 1;
@@ -250,6 +332,7 @@ function render(){
   $('bar').style.width = Math.min(100, S ? R/S*100 : 0) + '%';
   $('info').textContent = `Sisa saldo ${rp(S-R-Tb)}` + (Tb ? ` · Ditabung ${rp(Tb)}` : '');
   $('periodeHdr').textContent = rentang();
+  $('tabRibbon').textContent = 'Saldo tabungan: ' + rp(tabungan);
   laporan(T,R,S,Tb);
   const n = data.filter(d => !['ok','tb'].includes(st(d))).length;
   $('badge').hidden = !n; $('badge').textContent = n;
@@ -266,10 +349,11 @@ function render(){
     return k(d)===k(n) ? 'Hari ini' : k(d)===k(new Date(n-864e5)) ? 'Kemarin' : d.toLocaleDateString('id-ID',{day:'numeric',month:'long'}); };
   const g = {}; trx.forEach(t => (g[hari(t.tgl)] = g[hari(t.tgl)] || []).push(t));
   $('hist').innerHTML = trx.length ? Object.entries(g).map(([h,l]) => `<div class="day">${h}</div><div class="card">${l.map(t =>
-    `<div class="row" data-tx="${trx.indexOf(t)}"><div class="mid"><b>${esc(t.kategori)}</b><small>${esc(t.catatan||'-')}</small></div>${tabNama(t.kategori) ? `<div class="amt"><b class="pos">+ ${rp(t.jumlah)}</b><small>ditabung</small></div>` : `<div class="amt neg">- ${rp(t.jumlah)}</div>`}</div>`).join('')}</div>`).join('')
+    `<div class="row" data-tx="${trx.indexOf(t)}"><div class="mid"><b>${esc(t.kategori)}</b><small>${t.sumber==='Tabungan' ? 'dari tabungan' : esc(t.catatan||'-')}</small></div>${tabNama(t.kategori) ? `<div class="amt"><b class="pos">+ ${rp(t.jumlah)}</b><small>ditabung</small></div>` : `<div class="amt neg">- ${rp(t.jumlah)}${t.sumber==='Tabungan'?' 🏦':''}</div>`}</div>`).join('')}</div>`).join('')
     : '<p class="empty">Belum ada transaksi.</p>';
 
   $('thrv').textContent = thr() + '%';
+  $('pinLbl').textContent = pinAktif ? 'Ubah / matikan PIN' : 'Aktifkan PIN aplikasi';
   $('lockbtn').textContent = terkunci ? '🔒 Terkunci' : '🔓 Terbuka';
   const tglMulai = mulai ? new Date(mulai).toISOString().slice(0,10) : '';
   $('periodeCard').innerHTML = `
@@ -277,6 +361,7 @@ function render(){
       <div class="amt"><input type="date" id="tglGajian" value="${tglMulai}" style="width:150px;padding:8px"></div></div>
     <div class="row"><div class="mid"><b>Periode berjalan</b><small>${rentang()||'-'}</small></div></div>`;
   $('tglGajian').onchange = e => { if(e.target.value) kirim({action:'periode', tgl:e.target.value}); };
+  $('aturTab').innerHTML = `<div class="row" ${terkunci?'':'data-a="tabAwal"'}><div class="mid"><b>Saldo awal tabungan</b><small>${terkunci?'Terkunci':'Ketuk untuk ubah'}</small></div><div class="amt"><b>${rp(tabungan)}</b></div></div>`;
   $('atur').innerHTML = `<div class="row" ${terkunci?'':'data-a="saldo"'}><div class="mid"><b>Saldo awal</b><small>${terkunci?'Terkunci':'Ketuk untuk ubah'}</small></div><div class="amt"><b>${rp(S)}</b></div></div>`
     + data.map((d,i) => `<div class="row" ${terkunci?'':`data-i="${i}"`}><div class="mid"><b>${esc(d.nama)}</b><small>${isTab(d)?'Target tabungan / investasi':'Batas maksimal'}</small></div><div class="amt"><b>${rp(d.nominal)}</b></div></div>`).join('')
     + (terkunci ? '' : '<div class="row" data-a="kategori"><div class="mid"><b>+ Tambah kategori</b></div></div>');
@@ -352,8 +437,9 @@ async function kirim(payload, silent){
   if(!silent) toast('Menyimpan…', 30000);
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 30000);
   try{
-    const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(payload), signal: ctl.signal});
+    const res = await fetch(url(), {method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(Object.assign({pin:PIN}, payload)), signal: ctl.signal});
     const j = await res.json();
+    if(j.butuhPin){ bukaKunci(); if(j.terkunciSampai) pesanTerkunci(j.terkunciSampai); return false; }
     if(j.error){ alert(j.error); return false; }
     apply(j); render();
     if(!silent){ toast('Tersimpan ✓'); for(const d of data) peringatan(d, before[d.nama] ?? 0); }
@@ -365,17 +451,38 @@ async function kirim(payload, silent){
 }
 
 function judul(){ $('jdl').textContent = (editT ? 'Ubah ' : 'Catat ') + (tabNama($('kat').value) ? 'tabungan / investasi' : 'pengeluaran'); }
-$('kat').onchange = judul;
+function toggleSumber(){
+  const tab = tabNama($('kat').value);
+  $('lblSumber').hidden = tab; $('sumber').hidden = tab;
+  if(tab) $('sumber').value = 'Utama';
+}
+$('kat').onchange = () => { judul(); toggleSumber(); };
 function bukaForm(t){
   editT = t || null;
   $('hapus').hidden = !t;
-  if(t){ $('kat').value = t.kategori; $('jml').value = t.jumlah; $('cat').value = t.catatan || ''; }
-  else { $('jml').value = ''; $('cat').value = ''; }
-  judul();
+  if(t){ $('kat').value = t.kategori; $('jml').value = t.jumlah; $('cat').value = t.catatan || ''; $('sumber').value = t.sumber==='Tabungan'?'Tabungan':'Utama'; }
+  else { $('jml').value = ''; $('cat').value = ''; $('sumber').value = 'Utama'; }
+  judul(); toggleSumber();
   $('dlg').showModal();
 }
 const aksi = {
   periodeBaru(){ if(confirm('Mulai periode anggaran baru dari hari ini? Pengeluaran sebelumnya akan tersimpan di riwayat bulan lalu.')) kirim({action:'periode', ulang:true}); },
+  tabAwal(){
+    const v = prompt('Saldo awal tabungan (Rp)\nIsi sesuai saldo tabungan yang sudah ada saat ini.', tabungan); if(v === null) return;
+    const n = angka(v); kirim({action:'tabunganAwal', saldo:n});
+  },
+  async aturPin(){
+    let pinLama = '';
+    if(pinAktif){ pinLama = prompt('Masukkan PIN saat ini:'); if(pinLama === null) return; }
+    const baru = prompt('PIN baru (4 angka)\nKosongkan lalu OK untuk mematikan PIN.'); if(baru === null) return;
+    if(baru && !/^\d{4}$/.test(baru)) return alert('PIN harus 4 digit angka.');
+    if(baru){ const ulang = prompt('Ulangi PIN baru:'); if(ulang !== baru) return alert('PIN tidak sama, coba lagi.'); }
+    if(await kirim({action:'setPin', pinLama, pinBaru:baru})){
+      PIN = baru || ''; sessionStorage.setItem('pin', PIN);
+      toast(baru ? 'PIN aplikasi aktif ✓' : 'PIN dimatikan');
+    }
+  },
+  kunciSkrg(){ sessionStorage.removeItem('pin'); PIN=''; load(); },
   catat(){ if(!data.length) return load(); bukaForm(); },
   kunci(){
     if(terkunci){ if(confirm('Buka kunci untuk mengubah saldo awal dan batas kategori?')) terkunci = false; }
@@ -425,36 +532,43 @@ document.addEventListener('click', e => {
 $('batal').onclick = () => { editT = null; $('dlg').close(); };
 $('hapus').onclick = async () => {
   if(!editT || !confirm('Hapus pengeluaran ini?')) return;
-  const t = editT, snap = JSON.parse(JSON.stringify({data, trx}));
+  const t = editT, snap = JSON.parse(JSON.stringify({data, trx})), snapTab = tabungan;
   const k = data.find(x => x.nama === t.kategori); if(k) k.realisasi = Math.max(0, k.realisasi - t.jumlah);
+  if(isTab(k)) tabungan -= t.jumlah; else if(t.sumber==='Tabungan') tabungan += t.jumlah;
   trx = trx.filter(x => x !== t); editT = null; $('dlg').close(); render(); toast('Pengeluaran dihapus');
-  if(!(await kirim({action:'trxHapus', row:t.row, tgl:t.tgl, kategori:t.kategori}, true))){ data = snap.data; trx = snap.trx; render(); load(); }
+  if(!(await kirim({action:'trxHapus', row:t.row, tgl:t.tgl, kategori:t.kategori}, true))){ data = snap.data; trx = snap.trx; tabungan = snapTab; render(); load(); }
 };
 $('simpan').onclick = async () => {
   const jumlah = Number($('jml').value); if(!jumlah || jumlah <= 0) return;
   const kategori = $('kat').value, catatan = $('cat').value;
   const dk = data.find(x => x.nama === kategori); if(!dk) return;
+  const sumber = isTab(dk) ? 'Utama' : $('sumber').value;
   if(editT){
     const t = editT, asli = {...t};
     if(!isTab(dk) && dk.realisasi - (asli.kategori === kategori ? asli.jumlah : 0) + jumlah > dk.nominal && !confirm(`Ini melewati batas maksimal ${dk.nama} (${rp(dk.nominal)}). Tetap simpan?`)) return;
-    const snap = JSON.parse(JSON.stringify({data, trx}));
+    if(sumber==='Tabungan'){ const lepas = asli.sumber==='Tabungan' ? asli.jumlah : 0; if(jumlah > tabungan + lepas){ alert(`Saldo tabungan tidak cukup. Saldo saat ini: ${rp(tabungan+lepas)}`); return; } }
+    const snap = JSON.parse(JSON.stringify({data, trx})), snapTab = tabungan;
     const lama = data.find(x => x.nama === asli.kategori); if(lama) lama.realisasi -= asli.jumlah;
+    if(asli.sumber==='Tabungan') tabungan += asli.jumlah;
+    if(sumber==='Tabungan') tabungan -= jumlah;
     const b = pct(dk); dk.realisasi += jumlah;
-    Object.assign(t, {kategori, jumlah, catatan});
+    Object.assign(t, {kategori, jumlah, catatan, sumber});
     $('dlg').close(); editT = null; render();
     if(!peringatan(dk, b)) toast('Perubahan disimpan ✓');
-    if(!(await kirim({action:'trxEdit', row:asli.row, tgl:asli.tgl, kategoriLama:asli.kategori, kategori, jumlah, catatan}, true))){ data = snap.data; trx = snap.trx; render(); load(); }
+    if(!(await kirim({action:'trxEdit', row:asli.row, tgl:asli.tgl, kategoriLama:asli.kategori, kategori, jumlah, catatan, sumber}, true))){ data = snap.data; trx = snap.trx; tabungan = snapTab; render(); load(); }
     return;
   }
   if(!isTab(dk) && dk.realisasi + jumlah > dk.nominal && !confirm(`Ini melewati batas maksimal ${dk.nama} (${rp(dk.nominal)}). Tetap simpan?`)) return;
+  if(sumber==='Tabungan' && jumlah > tabungan){ alert(`Saldo tabungan tidak cukup. Saldo saat ini: ${rp(tabungan)}`); return; }
   if('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
   // Perbarui tampilan langsung, sinkron ke Sheets di latar belakang
-  const snap = { data: JSON.parse(JSON.stringify(data)), trx: trx.slice() }, b = pct(dk);
-  dk.realisasi += jumlah; trx.unshift({tgl:Date.now(), kategori, jumlah, catatan});
+  const snap = { data: JSON.parse(JSON.stringify(data)), trx: trx.slice() }, snapTab = tabungan, b = pct(dk);
+  dk.realisasi += jumlah; trx.unshift({tgl:Date.now(), kategori, jumlah, catatan, sumber});
+  if(isTab(dk)) tabungan += jumlah; else if(sumber==='Tabungan') tabungan -= jumlah;
   $('dlg').close(); $('jml').value = ''; $('cat').value = '';
   render();
-  if(!peringatan(dk, b)) toast(isTab(dk) ? `Tersimpan ${rp(jumlah)} ditabung · ${Math.round(pct(dk))}% dari target` : `Tersimpan ${rp(jumlah)} · ${dk.nama} ${Math.round(pct(dk))}% terpakai`);
-  if(!(await kirim({kategori, jumlah, catatan}, true))){ data = snap.data; trx = snap.trx; render(); }
+  if(!peringatan(dk, b)) toast(isTab(dk) ? `Tersimpan ${rp(jumlah)} ditabung · ${Math.round(pct(dk))}% dari target` : `Tersimpan ${rp(jumlah)}${sumber==='Tabungan'?' dari tabungan':''} · ${dk.nama} ${Math.round(pct(dk))}% terpakai`);
+  if(!(await kirim({kategori, jumlah, catatan, sumber}, true))){ data = snap.data; trx = snap.trx; tabungan = snapTab; render(); }
 };
 setInterval(() => { if(!document.hidden && !$('dlg').open && (EMBED || LS.get('url'))) load(); }, 30000);
 document.addEventListener('visibilitychange', () => { if(!document.hidden && (EMBED || LS.get('url'))) load(); });
